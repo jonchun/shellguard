@@ -26,11 +26,46 @@ before publishing details publicly.
 Only the latest release on the `main` branch receives security updates.
 There is no backport policy for older versions.
 
+## Threat Model and Design Philosophy
+
+ShellGuard is designed for a specific context: it sits between an LLM (via MCP)
+and a remote host where the LLM has been prompted to operate in read-only,
+diagnostic mode. The LLM is already instructed not to take destructive actions.
+ShellGuard exists as a **fail-safe** -- a guardrail that catches mistakes, not a
+fortress designed to withstand a dedicated adversary with direct access to the
+tool.
+
+In normal operation, the LLM cooperates with the security policy. It will not
+attempt to `rm -rf /` or exfiltrate data because its system prompt tells it not
+to. ShellGuard's job is to enforce that contract mechanically so that prompt
+injection, model misbehavior, or accidental misuse cannot silently escalate into
+destructive actions. Think of it as a seatbelt, not an armored vehicle.
+
+**What ShellGuard is designed to stop:**
+
+- An LLM that has been prompt-injected into running destructive commands
+- Accidental execution of dangerous operations during legitimate diagnostics
+- Shell injection through malformed or adversarial input strings
+- Escalation from read-only diagnostics to write operations
+
+**What ShellGuard does not claim to stop:**
+
+- A skilled human attacker with direct access to the MCP tool who is
+  deliberately crafting bypass attempts. The allowlist and parser are thorough
+  but not formally verified.
+- Information disclosure through allowed read-only commands (this is by design
+  -- diagnostics require reading system state)
+- Attacks that operate entirely within the bounds of allowed commands (e.g.,
+  reading sensitive files with `cat`, querying metadata endpoints with `curl`)
+
+The security model is defense-in-depth: multiple independent layers each reduce
+risk, but no single layer is assumed to be impenetrable.
+
 ## Security Model Overview
 
-ShellGuard is an MCP server that gates shell command execution on remote hosts
-through a four-stage defense-in-depth pipeline. Every command must pass all four
-stages sequentially; a failure at any stage blocks execution entirely.
+ShellGuard gates shell command execution on remote hosts through a four-stage
+defense-in-depth pipeline. Every command must pass all four stages sequentially;
+a failure at any stage blocks execution entirely.
 
 ```
 Input ─► Parse ─► Validate ─► Reconstruct ─► Execute
