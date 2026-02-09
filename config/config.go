@@ -53,9 +53,11 @@ type Config struct {
 
 // SSHConfig holds SSH-specific configuration.
 type SSHConfig struct {
-	ConnectTimeout *duration `yaml:"connect_timeout"`
-	Retries        *int      `yaml:"retries"`
-	RetryBackoff   *duration `yaml:"retry_backoff"`
+	ConnectTimeout  *duration `yaml:"connect_timeout"`
+	Retries         *int      `yaml:"retries"`
+	RetryBackoff    *duration `yaml:"retry_backoff"`
+	HostKeyChecking *string   `yaml:"host_key_checking"`
+	KnownHostsFile  *string   `yaml:"known_hosts_file"`
 }
 
 // LoadFrom loads config from path. Missing files return zero Config, nil.
@@ -154,6 +156,18 @@ func (c *Config) applyEnvOverrides() error {
 		}
 		c.SSH.RetryBackoff = d
 	}
+	if v, ok := os.LookupEnv("SHELLGUARD_SSH_HOST_KEY_CHECKING"); ok {
+		if c.SSH == nil {
+			c.SSH = &SSHConfig{}
+		}
+		c.SSH.HostKeyChecking = &v
+	}
+	if v, ok := os.LookupEnv("SHELLGUARD_SSH_KNOWN_HOSTS_FILE"); ok {
+		if c.SSH == nil {
+			c.SSH = &SSHConfig{}
+		}
+		c.SSH.KnownHostsFile = &v
+	}
 
 	return nil
 }
@@ -192,6 +206,12 @@ func (c *Config) validate() error {
 		}
 		if c.SSH.RetryBackoff != nil && c.SSH.RetryBackoff.Duration() <= 0 {
 			return fmt.Errorf("ssh.retry_backoff must be positive, got %v", c.SSH.RetryBackoff.Duration())
+		}
+		if c.SSH.HostKeyChecking != nil {
+			mode := *c.SSH.HostKeyChecking
+			if mode != "accept-new" && mode != "strict" && mode != "off" {
+				return fmt.Errorf("ssh.host_key_checking must be one of: accept-new, strict, off; got %q", mode)
+			}
 		}
 	}
 	return nil

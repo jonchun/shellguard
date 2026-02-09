@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -527,5 +528,165 @@ func TestValidate_ZeroRetryBackoff(t *testing.T) {
 	_, err := LoadFrom(path)
 	if err == nil {
 		t.Fatal("LoadFrom() expected error for zero retry_backoff, got nil")
+	}
+}
+
+func TestSSHConfigHostKeyChecking(t *testing.T) {
+	input := `
+ssh:
+  host_key_checking: "accept-new"
+  known_hosts_file: "/custom/known_hosts"
+`
+	path := writeConfig(t, input)
+	cfg, err := LoadFrom(path)
+	if err != nil {
+		t.Fatalf("LoadFrom() error = %v", err)
+	}
+	if cfg.SSH == nil {
+		t.Fatal("SSH should not be nil")
+	}
+	if cfg.SSH.HostKeyChecking == nil {
+		t.Fatal("SSH.HostKeyChecking should not be nil")
+	}
+	if got, want := *cfg.SSH.HostKeyChecking, "accept-new"; got != want {
+		t.Fatalf("SSH.HostKeyChecking = %q, want %q", got, want)
+	}
+	if cfg.SSH.KnownHostsFile == nil {
+		t.Fatal("SSH.KnownHostsFile should not be nil")
+	}
+	if got, want := *cfg.SSH.KnownHostsFile, "/custom/known_hosts"; got != want {
+		t.Fatalf("SSH.KnownHostsFile = %q, want %q", got, want)
+	}
+}
+
+func TestSSHConfigHostKeyCheckingStrict(t *testing.T) {
+	path := writeConfig(t, "ssh:\n  host_key_checking: \"strict\"")
+	cfg, err := LoadFrom(path)
+	if err != nil {
+		t.Fatalf("LoadFrom() error = %v", err)
+	}
+	if cfg.SSH == nil {
+		t.Fatal("SSH should not be nil")
+	}
+	if cfg.SSH.HostKeyChecking == nil {
+		t.Fatal("SSH.HostKeyChecking should not be nil")
+	}
+	if got, want := *cfg.SSH.HostKeyChecking, "strict"; got != want {
+		t.Fatalf("SSH.HostKeyChecking = %q, want %q", got, want)
+	}
+}
+
+func TestSSHConfigHostKeyCheckingOff(t *testing.T) {
+	path := writeConfig(t, "ssh:\n  host_key_checking: \"off\"")
+	cfg, err := LoadFrom(path)
+	if err != nil {
+		t.Fatalf("LoadFrom() error = %v", err)
+	}
+	if cfg.SSH == nil {
+		t.Fatal("SSH should not be nil")
+	}
+	if cfg.SSH.HostKeyChecking == nil {
+		t.Fatal("SSH.HostKeyChecking should not be nil")
+	}
+	if got, want := *cfg.SSH.HostKeyChecking, "off"; got != want {
+		t.Fatalf("SSH.HostKeyChecking = %q, want %q", got, want)
+	}
+}
+
+func TestValidate_InvalidHostKeyChecking(t *testing.T) {
+	path := writeConfig(t, "ssh:\n  host_key_checking: \"invalid\"")
+	_, err := LoadFrom(path)
+	if err == nil {
+		t.Fatal("LoadFrom() expected error for invalid host_key_checking, got nil")
+	}
+}
+
+func TestValidate_ValidHostKeyCheckingModes(t *testing.T) {
+	modes := []string{"accept-new", "strict", "off"}
+	for _, mode := range modes {
+		t.Run(mode, func(t *testing.T) {
+			path := writeConfig(t, fmt.Sprintf("ssh:\n  host_key_checking: %q", mode))
+			cfg, err := LoadFrom(path)
+			if err != nil {
+				t.Fatalf("LoadFrom() error = %v", err)
+			}
+			if cfg.SSH == nil {
+				t.Fatal("SSH should not be nil")
+			}
+			if cfg.SSH.HostKeyChecking == nil {
+				t.Fatal("SSH.HostKeyChecking should not be nil")
+			}
+			if got, want := *cfg.SSH.HostKeyChecking, mode; got != want {
+				t.Fatalf("SSH.HostKeyChecking = %q, want %q", got, want)
+			}
+		})
+	}
+}
+
+func TestEnvOverrides_HostKeyChecking(t *testing.T) {
+	path := writeConfig(t, "")
+
+	t.Setenv("SHELLGUARD_SSH_HOST_KEY_CHECKING", "strict")
+	t.Setenv("SHELLGUARD_SSH_KNOWN_HOSTS_FILE", "/env/known_hosts")
+
+	cfg, err := LoadFrom(path)
+	if err != nil {
+		t.Fatalf("LoadFrom() error = %v", err)
+	}
+	if cfg.SSH == nil {
+		t.Fatal("SSH should not be nil after env override")
+	}
+	if cfg.SSH.HostKeyChecking == nil {
+		t.Fatal("SSH.HostKeyChecking should not be nil after env override")
+	}
+	if got, want := *cfg.SSH.HostKeyChecking, "strict"; got != want {
+		t.Fatalf("SSH.HostKeyChecking = %q, want %q", got, want)
+	}
+	if cfg.SSH.KnownHostsFile == nil {
+		t.Fatal("SSH.KnownHostsFile should not be nil after env override")
+	}
+	if got, want := *cfg.SSH.KnownHostsFile, "/env/known_hosts"; got != want {
+		t.Fatalf("SSH.KnownHostsFile = %q, want %q", got, want)
+	}
+}
+
+func TestEnvOverrides_HostKeyCheckingOverridesFile(t *testing.T) {
+	path := writeConfig(t, "ssh:\n  host_key_checking: \"accept-new\"")
+
+	t.Setenv("SHELLGUARD_SSH_HOST_KEY_CHECKING", "strict")
+
+	cfg, err := LoadFrom(path)
+	if err != nil {
+		t.Fatalf("LoadFrom() error = %v", err)
+	}
+	if cfg.SSH == nil {
+		t.Fatal("SSH should not be nil")
+	}
+	if cfg.SSH.HostKeyChecking == nil {
+		t.Fatal("SSH.HostKeyChecking should not be nil")
+	}
+	if got, want := *cfg.SSH.HostKeyChecking, "strict"; got != want {
+		t.Fatalf("SSH.HostKeyChecking = %q, want %q (env should override file)", got, want)
+	}
+}
+
+func TestSSHConfigHostKeyCheckingNilWhenUnset(t *testing.T) {
+	input := `
+ssh:
+  retries: 3
+`
+	path := writeConfig(t, input)
+	cfg, err := LoadFrom(path)
+	if err != nil {
+		t.Fatalf("LoadFrom() error = %v", err)
+	}
+	if cfg.SSH == nil {
+		t.Fatal("SSH should not be nil")
+	}
+	if cfg.SSH.HostKeyChecking != nil {
+		t.Fatalf("SSH.HostKeyChecking = %q, want nil when unset", *cfg.SSH.HostKeyChecking)
+	}
+	if cfg.SSH.KnownHostsFile != nil {
+		t.Fatalf("SSH.KnownHostsFile = %q, want nil when unset", *cfg.SSH.KnownHostsFile)
 	}
 }
