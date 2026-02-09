@@ -1,6 +1,7 @@
 package ssh
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -121,6 +122,13 @@ func buildAuthMethodsWithDefaults(params ConnectionParams, defaults []string) ([
 		}
 		signer, err := gossh.ParsePrivateKey(key)
 		if err != nil {
+			var ppErr *gossh.PassphraseMissingError
+			if errors.As(err, &ppErr) {
+				return nil, agentCleanup, fmt.Errorf(
+					"key %s is passphrase-protected; add it to your ssh-agent with: ssh-add %s",
+					params.IdentityFile, params.IdentityFile,
+				)
+			}
 			return nil, agentCleanup, fmt.Errorf("parse identity key: %w", err)
 		}
 		methods = append(methods, gossh.PublicKeys(signer))

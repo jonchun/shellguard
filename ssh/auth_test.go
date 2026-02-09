@@ -393,6 +393,47 @@ func TestBuildAuthMethodsExplicitPlusAgent(t *testing.T) {
 	}
 }
 
+// --- buildAuthMethods passphrase tests ---
+
+func TestBuildAuthMethodsExplicitPassphraseProtected(t *testing.T) {
+	t.Setenv("SSH_AUTH_SOCK", "")
+	dir := t.TempDir()
+	keyPath := writeTestKey(t, dir, "id_ed25519_enc", generatePassphraseProtectedKeyPEM(t))
+
+	_, cleanup, err := buildAuthMethodsWithDefaults(ConnectionParams{
+		Host:         "example.com",
+		IdentityFile: keyPath,
+	}, nil)
+	defer cleanup()
+	if err == nil {
+		t.Fatal("expected error for passphrase-protected explicit identity file")
+	}
+	errMsg := err.Error()
+	if !strings.Contains(errMsg, "ssh-add") {
+		t.Errorf("error = %q, want it to contain 'ssh-add'", errMsg)
+	}
+	if !strings.Contains(errMsg, "ssh-agent") {
+		t.Errorf("error = %q, want it to contain 'ssh-agent'", errMsg)
+	}
+}
+
+func TestBuildAuthMethodsDefaultPassphraseProtectedSkipped(t *testing.T) {
+	t.Setenv("SSH_AUTH_SOCK", "")
+	dir := t.TempDir()
+	encPath := writeTestKey(t, dir, "id_ed25519", generatePassphraseProtectedKeyPEM(t))
+
+	methods, cleanup, err := buildAuthMethodsWithDefaults(ConnectionParams{
+		Host: "example.com",
+	}, []string{encPath})
+	defer cleanup()
+	if err != nil {
+		t.Fatalf("buildAuthMethodsWithDefaults() error = %v, want nil (silent skip)", err)
+	}
+	if len(methods) != 0 {
+		t.Errorf("expected 0 auth methods for passphrase-protected defaults, got %d", len(methods))
+	}
+}
+
 // --- test helpers ---
 
 // generateTestKeyPEM creates a valid ed25519 private key in PEM format for testing.
@@ -405,6 +446,21 @@ func generateTestKeyPEM(t *testing.T) []byte {
 	block, err := gossh.MarshalPrivateKey(priv, "")
 	if err != nil {
 		t.Fatalf("marshal private key: %v", err)
+	}
+	return pem.EncodeToMemory(block)
+}
+
+// generatePassphraseProtectedKeyPEM creates a passphrase-protected ed25519
+// private key in PEM format for testing.
+func generatePassphraseProtectedKeyPEM(t *testing.T) []byte {
+	t.Helper()
+	_, priv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("generate ed25519 key: %v", err)
+	}
+	block, err := gossh.MarshalPrivateKeyWithPassphrase(priv, "", []byte("test-passphrase"))
+	if err != nil {
+		t.Fatalf("marshal passphrase-protected key: %v", err)
 	}
 	return pem.EncodeToMemory(block)
 }
