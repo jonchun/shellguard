@@ -33,7 +33,14 @@ go install github.com/jonchun/shellguard/cmd/shellguard@latest
 
 ### Configure with an MCP Client
 
-Add ShellGuard to your MCP client configuration. For example, with [OpenCode](https://opencode.ai):
+ShellGuard starts as a stdio MCP server -- no arguments needed. Add it to your MCP client of choice:
+
+<details>
+<summary><b>Cursor</b></summary>
+
+Go to: `Settings` -> `Cursor Settings` -> `MCP` -> `Add new global MCP server`
+
+Or paste this into your `~/.cursor/mcp.json` file. You can also install per-project by creating `.cursor/mcp.json` in your project folder. See [Cursor MCP docs](https://docs.cursor.com/context/model-context-protocol) for more info.
 
 ```json
 {
@@ -45,7 +52,131 @@ Add ShellGuard to your MCP client configuration. For example, with [OpenCode](ht
 }
 ```
 
-That's it. ShellGuard starts as a stdio MCP server -- no arguments needed.
+</details>
+
+<details>
+<summary><b>Claude Desktop</b></summary>
+
+Add the following to your Claude Desktop config file. See [Claude Desktop MCP docs](https://modelcontextprotocol.io/quickstart/user) for more info.
+
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "shellguard": {
+      "command": "shellguard"
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><b>Claude Code</b></summary>
+
+Run this command. See [Claude Code MCP docs](https://docs.anthropic.com/en/docs/claude-code/mcp) for more info.
+
+```sh
+claude mcp add shellguard -- shellguard
+```
+
+</details>
+
+<details>
+<summary><b>OpenCode</b></summary>
+
+Add this to your OpenCode configuration file. See [OpenCode MCP docs](https://opencode.ai/docs/mcp-servers) for more info.
+
+```json
+{
+  "mcp": {
+    "shellguard": {
+      "type": "local",
+      "command": ["shellguard"],
+      "enabled": true
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><b>VS Code / GitHub Copilot</b></summary>
+
+Add the following to your VS Code `settings.json` or `.vscode/mcp.json`. See [VS Code MCP docs](https://code.visualstudio.com/docs/copilot/chat/mcp-servers) for more info.
+
+#### User settings (`settings.json`)
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "shellguard": {
+        "type": "stdio",
+        "command": "shellguard"
+      }
+    }
+  }
+}
+```
+
+#### Workspace config (`.vscode/mcp.json`)
+
+```json
+{
+  "servers": {
+    "shellguard": {
+      "type": "stdio",
+      "command": "shellguard"
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><b>Zed</b></summary>
+
+Add the following to your Zed settings file (`~/.config/zed/settings.json`). See [Zed MCP docs](https://zed.dev/docs/assistant/model-context-protocol) for more info.
+
+```json
+{
+  "context_servers": {
+    "shellguard": {
+      "command": {
+        "path": "shellguard",
+        "args": []
+      }
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><b>Roo Code</b></summary>
+
+Go to: `Roo Code Settings` -> `MCP Servers` -> `Edit MCP Settings`
+
+Or add the following to your Roo Code MCP settings file. See [Roo Code MCP docs](https://docs.roocode.com/features/mcp/using-mcp-in-roo) for more info.
+
+```json
+{
+  "mcpServers": {
+    "shellguard": {
+      "command": "shellguard"
+    }
+  }
+}
+```
+
+</details>
 
 ## What It Does
 
