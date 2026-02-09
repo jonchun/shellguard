@@ -15,7 +15,8 @@ import (
 
 func TestAgentSigners_NoAuthSock(t *testing.T) {
 	t.Setenv("SSH_AUTH_SOCK", "")
-	signers := agentSigners()
+	signers, cleanup := agentSigners()
+	defer cleanup()
 	if signers != nil {
 		t.Fatalf("expected nil signers when SSH_AUTH_SOCK is empty, got %d", len(signers))
 	}
@@ -23,7 +24,8 @@ func TestAgentSigners_NoAuthSock(t *testing.T) {
 
 func TestAgentSigners_UnreachableSocket(t *testing.T) {
 	t.Setenv("SSH_AUTH_SOCK", "/tmp/shellguard-test-nonexistent.sock")
-	signers := agentSigners()
+	signers, cleanup := agentSigners()
+	defer cleanup()
 	if signers != nil {
 		t.Fatalf("expected nil signers for unreachable socket, got %d", len(signers))
 	}
@@ -33,7 +35,8 @@ func TestAgentSigners_EmptyAgent(t *testing.T) {
 	sockPath := startTestAgentEmpty(t)
 	t.Setenv("SSH_AUTH_SOCK", sockPath)
 
-	signers := agentSigners()
+	signers, cleanup := agentSigners()
+	defer cleanup()
 	if signers != nil {
 		t.Fatalf("expected nil signers from empty agent, got %d", len(signers))
 	}
@@ -43,7 +46,8 @@ func TestAgentSigners_WithLoadedKey(t *testing.T) {
 	sockPath := startTestAgentWithKey(t)
 	t.Setenv("SSH_AUTH_SOCK", sockPath)
 
-	signers := agentSigners()
+	signers, cleanup := agentSigners()
+	defer cleanup()
 	if signers == nil {
 		t.Fatal("expected non-nil signers from agent with loaded key")
 	}
@@ -52,9 +56,51 @@ func TestAgentSigners_WithLoadedKey(t *testing.T) {
 	}
 }
 
+func TestAgentSigners_CanSignBeforeCleanup(t *testing.T) {
+	sockPath := startTestAgentWithKey(t)
+	t.Setenv("SSH_AUTH_SOCK", sockPath)
+
+	signers, cleanup := agentSigners()
+	defer cleanup()
+	if signers == nil {
+		t.Fatal("expected non-nil signers")
+	}
+
+	// Verify the signer can actually produce a signature while the
+	// agent connection is still open.
+	data := []byte("test data to sign")
+	sig, err := signers[0].Sign(rand.Reader, data)
+	if err != nil {
+		t.Fatalf("Sign() error = %v", err)
+	}
+	if sig == nil {
+		t.Fatal("expected non-nil signature")
+	}
+}
+
+func TestAgentSigners_CannotSignAfterCleanup(t *testing.T) {
+	sockPath := startTestAgentWithKey(t)
+	t.Setenv("SSH_AUTH_SOCK", sockPath)
+
+	signers, cleanup := agentSigners()
+	if signers == nil {
+		t.Fatal("expected non-nil signers")
+	}
+
+	// Close the connection, then try to sign — should fail.
+	cleanup()
+
+	data := []byte("test data to sign")
+	_, err := signers[0].Sign(rand.Reader, data)
+	if err == nil {
+		t.Fatal("expected Sign() to fail after cleanup, but it succeeded")
+	}
+}
+
 func TestBuildAuthMethods_NoSources(t *testing.T) {
 	t.Setenv("SSH_AUTH_SOCK", "")
-	methods := buildAuthMethods("")
+	methods, cleanup := buildAuthMethods("")
+	defer cleanup()
 	if len(methods) != 0 {
 		t.Fatalf("expected 0 auth methods, got %d", len(methods))
 	}
@@ -64,7 +110,8 @@ func TestBuildAuthMethods_IdentityFileOnly(t *testing.T) {
 	t.Setenv("SSH_AUTH_SOCK", "")
 	keyFile := writeTestKeyFile(t)
 
-	methods := buildAuthMethods(keyFile)
+	methods, cleanup := buildAuthMethods(keyFile)
+	defer cleanup()
 	if len(methods) != 1 {
 		t.Fatalf("expected 1 auth method (identity file), got %d", len(methods))
 	}
@@ -74,7 +121,8 @@ func TestBuildAuthMethods_AgentOnly(t *testing.T) {
 	sockPath := startTestAgentWithKey(t)
 	t.Setenv("SSH_AUTH_SOCK", sockPath)
 
-	methods := buildAuthMethods("")
+	methods, cleanup := buildAuthMethods("")
+	defer cleanup()
 	if len(methods) != 1 {
 		t.Fatalf("expected 1 auth method (agent), got %d", len(methods))
 	}
@@ -85,7 +133,8 @@ func TestBuildAuthMethods_IdentityFileAndAgent(t *testing.T) {
 	t.Setenv("SSH_AUTH_SOCK", sockPath)
 	keyFile := writeTestKeyFile(t)
 
-	methods := buildAuthMethods(keyFile)
+	methods, cleanup := buildAuthMethods(keyFile)
+	defer cleanup()
 	if len(methods) != 2 {
 		t.Fatalf("expected 2 auth methods, got %d", len(methods))
 	}
@@ -93,7 +142,8 @@ func TestBuildAuthMethods_IdentityFileAndAgent(t *testing.T) {
 
 func TestBuildAuthMethods_InvalidIdentityFile(t *testing.T) {
 	t.Setenv("SSH_AUTH_SOCK", "")
-	methods := buildAuthMethods("/nonexistent/key")
+	methods, cleanup := buildAuthMethods("/nonexistent/key")
+	defer cleanup()
 	if len(methods) != 0 {
 		t.Fatalf("expected 0 auth methods for invalid identity file, got %d", len(methods))
 	}
@@ -105,7 +155,8 @@ func TestBuildAuthMethods_CorruptIdentityFile(t *testing.T) {
 	if err := os.WriteFile(tmpFile, []byte("not a real key"), 0o600); err != nil {
 		t.Fatalf("write corrupt key: %v", err)
 	}
-	methods := buildAuthMethods(tmpFile)
+	methods, cleanup := buildAuthMethods(tmpFile)
+	defer cleanup()
 	if len(methods) != 0 {
 		t.Fatalf("expected 0 auth methods for corrupt identity file, got %d", len(methods))
 	}
