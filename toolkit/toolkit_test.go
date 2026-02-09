@@ -223,7 +223,7 @@ func TestDeployTools(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		client := newMockSFTPClient()
-		msg, err := DeployTools(client, []string{"rg"}, "x86_64")
+		msg, err := DeployTools(context.Background(), client, []string{"rg"}, "x86_64")
 		if err != nil {
 			t.Fatalf("DeployTools() error = %v", err)
 		}
@@ -240,14 +240,14 @@ func TestDeployTools(t *testing.T) {
 
 	t.Run("unsupported arch", func(t *testing.T) {
 		client := newMockSFTPClient()
-		if _, err := DeployTools(client, []string{"rg"}, "s390x"); err == nil {
+		if _, err := DeployTools(context.Background(), client, []string{"rg"}, "s390x"); err == nil {
 			t.Fatal("expected unsupported arch error")
 		}
 	})
 
 	t.Run("partial failure", func(t *testing.T) {
 		client := newMockSFTPClient()
-		msg, err := DeployTools(client, []string{"rg", "jq"}, "x86_64")
+		msg, err := DeployTools(context.Background(), client, []string{"rg", "jq"}, "x86_64")
 		if err != nil {
 			t.Fatalf("DeployTools() error = %v", err)
 		}
@@ -343,6 +343,43 @@ func (m *mockWriteCloser) Close() error {
 }
 
 var _ ssh.SFTPClient = (*mockSFTPClient)(nil)
+
+func TestDeployToolsContextCancellation(t *testing.T) {
+	cacheDir := t.TempDir()
+	oldSpecs := downloadSpecs
+	oldClient := downloadHTTPClient
+	oldCacheRoot := cacheRootDir
+	t.Cleanup(func() {
+		downloadSpecs = oldSpecs
+		downloadHTTPClient = oldClient
+		cacheRootDir = oldCacheRoot
+	})
+
+	downloadSpecs = map[string]map[string]DownloadSpec{
+		"rg": {
+			"x86_64": {URL: "https://toolkit.example/rg", SHA256: "deadbeef"},
+		},
+	}
+	downloadHTTPClient = &http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			<-req.Context().Done()
+			return nil, req.Context().Err()
+		}),
+	}
+	cacheRootDir = func() (string, error) { return cacheDir, nil }
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	client := newMockSFTPClient()
+	msg, err := DeployTools(ctx, client, []string{"rg"}, "x86_64")
+	if err != nil {
+		t.Fatalf("DeployTools() error = %v", err)
+	}
+	if !strings.Contains(msg, "rg") || !strings.Contains(msg, "cancel") {
+		t.Fatalf("expected message to contain context cancellation for rg, got: %q", msg)
+	}
+}
 
 type roundTripFunc func(*http.Request) (*http.Response, error)
 
