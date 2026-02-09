@@ -15,18 +15,26 @@ builds:
       - arm64
 
 archives:
-  - format: tar.gz
+  - formats:
+      - tar.gz
     name_template: "shellguard_{{ .Os }}_{{ .Arch }}"
 
-brews:
-  - repository:
+homebrew_casks:
+  - name: shellguard
+    binaries:
+      - shellguard
+    repository:
       owner: jonchun
       name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     homepage: https://github.com/jonchun/shellguard
-    description: Security-first MCP server for remote command execution
-    license: Apache-2.0
-    install: |
-      bin.install "shellguard"
+    description: MCP server for read-only shell access over SSH
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/shellguard"]
+          end
 
 checksum:
   name_template: checksums.txt
