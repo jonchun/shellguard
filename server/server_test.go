@@ -616,7 +616,7 @@ func TestDownloadNameCollision(t *testing.T) {
 func TestNewMCPServerRegistersTools(t *testing.T) {
 	ctx := context.Background()
 	core := NewCore(basicRegistry(), newFakeRunner(), nil)
-	s := NewMCPServer(core, nil)
+	s := NewMCPServer(core)
 	c := mcp.NewClient(&mcp.Implementation{Name: "test-client", Version: "v0.0.1"}, nil)
 	t1, t2 := mcp.NewInMemoryTransports()
 	ss, err := s.Connect(ctx, t1, nil)
@@ -683,6 +683,22 @@ func TestNewCoreNilLoggerUsesDiscard(t *testing.T) {
 	core := NewCore(basicRegistry(), newFakeRunner(), nil)
 	if core.logger == nil {
 		t.Fatal("expected discard logger, got nil")
+	}
+}
+
+func TestCoreLoggerReturnsLogger(t *testing.T) {
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&buf, nil))
+	core := NewCore(basicRegistry(), newFakeRunner(), logger)
+	if got := core.Logger(); got != logger {
+		t.Fatalf("Logger() = %v, want %v", got, logger)
+	}
+}
+
+func TestCoreLoggerReturnsDiscardWhenNil(t *testing.T) {
+	core := NewCore(basicRegistry(), newFakeRunner(), nil)
+	if got := core.Logger(); got == nil {
+		t.Fatal("Logger() should return discard logger, got nil")
 	}
 }
 
