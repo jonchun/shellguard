@@ -16,6 +16,17 @@ import (
 
 const defaultTimeout = 30
 
+// SubcommandCommands identifies commands that use subcommand-style dispatch
+// (e.g. "docker ps", "kubectl get"). Both the validator and server packages
+// reference this map so they stay in sync.
+var SubcommandCommands = map[string]bool{
+	"docker":    true,
+	"kubectl":   true,
+	"svn":       true,
+	"systemctl": true,
+	"aws":       true,
+}
+
 //go:embed manifests/*.yaml manifests/denied/*.yaml
 var manifestsFS embed.FS
 

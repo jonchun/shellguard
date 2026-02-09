@@ -12,13 +12,6 @@ import (
 )
 
 var (
-	subcommandCommands = map[string]bool{
-		"docker":    true,
-		"kubectl":   true,
-		"svn":       true,
-		"systemctl": true,
-		"aws":       true,
-	}
 	sqlAllowedPrefixes = []string{"SELECT", "EXPLAIN", "SHOW", "WITH", "\\d", "\\l", "\\dt", "\\di", "\\dn", "\\du", "\\df", "\\x", "\\timing", "\\pset"}
 	globChars          = regexp.MustCompile(`[*?\[]`)
 )
@@ -52,7 +45,7 @@ func validateSegment(segment parser.PipelineSegment, registry map[string]*manife
 		return validateXargs(segment, registry)
 	}
 
-	if subcommandCommands[command] && len(args) > 0 {
+	if manifest.SubcommandCommands[command] && len(args) > 0 {
 		return validateSubcommand(command, args, registry)
 	}
 

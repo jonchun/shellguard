@@ -154,6 +154,18 @@ func NewCore(registry map[string]*manifest.Manifest, runner Executor, logger *sl
 	return c
 }
 
+// Close disconnects all SSH sessions and clears internal state.
+// It is safe to call multiple times.
+func (c *Core) Close() error {
+	if err := c.Runner.Disconnect(""); err != nil {
+		c.logger.Info("close", "outcome", "error", "error", err.Error())
+		return err
+	}
+	c.clearHostState("")
+	c.logger.Info("close", "outcome", "success")
+	return nil
+}
+
 // Logger returns the logger used by this Core.
 func (c *Core) Logger() *slog.Logger {
 	return c.logger
@@ -316,7 +328,7 @@ func (c *Core) Provision(ctx context.Context, in ProvisionInput) (map[string]any
 	}
 	defer func() { _ = sftpClient.Close() }()
 
-	message, err := toolkit.DeployTools(sftpClient, probe.Missing, probe.Arch)
+	message, err := toolkit.DeployTools(ctx, sftpClient, probe.Missing, probe.Arch)
 	if err != nil {
 		c.logger.InfoContext(ctx, "provision",
 			"host", host,
@@ -468,7 +480,7 @@ func (c *Core) getPipelineTimeout(p *parser.Pipeline) time.Duration {
 		if m != nil && m.Timeout > maxSec {
 			maxSec = m.Timeout
 		}
-		if subcommandCommands[seg.Command] && len(seg.Args) > 0 {
+		if manifest.SubcommandCommands[seg.Command] && len(seg.Args) > 0 {
 			key := seg.Command + "_" + seg.Args[0]
 			if seg.Command == "aws" && len(seg.Args) >= 2 {
 				key = seg.Command + "_" + seg.Args[0] + "_" + seg.Args[1]
@@ -479,14 +491,6 @@ func (c *Core) getPipelineTimeout(p *parser.Pipeline) time.Duration {
 		}
 	}
 	return time.Duration(maxSec) * time.Second
-}
-
-var subcommandCommands = map[string]bool{
-	"docker":    true,
-	"kubectl":   true,
-	"svn":       true,
-	"systemctl": true,
-	"aws":       true,
 }
 
 func pipelineContainsPSQL(p *parser.Pipeline) bool {
