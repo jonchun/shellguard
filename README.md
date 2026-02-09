@@ -205,6 +205,61 @@ Every command goes through a pipeline before reaching the remote host:
 
 For full details, see [ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
+## SSH Configuration
+
+### Authentication
+
+ShellGuard tries authentication methods in this order, stopping at the first success:
+
+| Priority | Method | Source | On failure |
+| -------- | ------ | ------ | ---------- |
+| 1 | Explicit key | `identity_file` parameter in `connect` | **Fatal** -- connection fails immediately |
+| 2 | ssh-agent | `SSH_AUTH_SOCK` unix socket | Silent -- skipped |
+| 3 | Default keys | `~/.ssh/id_ed25519`, `id_ecdsa`, `id_rsa` | Silent -- skipped |
+
+Passphrase-protected keys are silently skipped during default key discovery. If you specify a passphrase-protected key via `identity_file`, the connection will fail. Add the key to your agent first: `ssh-add ~/.ssh/my_key`.
+
+### SSH Config Support
+
+ShellGuard reads `~/.ssh/config` and resolves `HostName`, `User`, `Port`, and `IdentityFile` per host. Explicit parameters passed to the `connect` tool take precedence.
+
+**Not supported:** `Match` directives, `ProxyJump` / `ProxyCommand`, `ForwardAgent`.
+
+### Host Key Verification
+
+ShellGuard verifies SSH host keys using `~/.ssh/known_hosts`. Three modes are available:
+
+| Mode | Behavior |
+| ---- | -------- |
+| `accept-new` | **(Default)** Trust-on-first-use. Unknown hosts are accepted and written to `known_hosts`. Key changes are rejected. |
+| `strict` | Require the host key to already exist in `known_hosts`. Unknown hosts are rejected. |
+| `off` | Disable host key verification entirely. |
+
+If a host key has changed, remove the old entry from your `known_hosts` file.
+
+### Configuration
+
+Settings can be specified in a YAML config file or via environment variables. Environment variables take precedence.
+
+**Config file location:** `$XDG_CONFIG_HOME/shellguard/config.yaml` (default: `~/.config/shellguard/config.yaml`)
+
+```yaml
+ssh:
+  connect_timeout: "10s"           # default 10s
+  retries: 2                       # default 2
+  retry_backoff: "250ms"           # default 250ms
+  host_key_checking: "accept-new"  # accept-new | strict | off
+  known_hosts_file: "~/.ssh/known_hosts"
+```
+
+| YAML field | Environment variable | Default | Description |
+| ---------- | -------------------- | ------- | ----------- |
+| `ssh.connect_timeout` | `SHELLGUARD_SSH_CONNECT_TIMEOUT` | `10s` | TCP + SSH handshake timeout |
+| `ssh.retries` | `SHELLGUARD_SSH_RETRIES` | `2` | Connection/execution retry attempts |
+| `ssh.retry_backoff` | `SHELLGUARD_SSH_RETRY_BACKOFF` | `250ms` | Base backoff (exponential: `backoff * 2^attempt`) |
+| `ssh.host_key_checking` | `SHELLGUARD_SSH_HOST_KEY_CHECKING` | `accept-new` | Host key verification mode |
+| `ssh.known_hosts_file` | `SHELLGUARD_SSH_KNOWN_HOSTS_FILE` | `~/.ssh/known_hosts` | Path to known_hosts file |
+
 ## Toolkit Provisioning
 
 Remote servers don't always have the tools you want. On `connect`, ShellGuard probes for `rg`, `jq`, and `yq`. If any are missing, the LLM can call `provision` to deploy them:
