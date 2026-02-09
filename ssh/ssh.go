@@ -90,6 +90,22 @@ func WithRetryBackoff(backoff time.Duration) Option {
 	}
 }
 
+func WithHostKeyChecking(mode HostKeyMode) Option {
+	return func(m *SSHManager) {
+		if d, ok := m.dialer.(*XCryptoDialer); ok {
+			d.HostKeyMode = mode
+		}
+	}
+}
+
+func WithKnownHostsFile(path string) Option {
+	return func(m *SSHManager) {
+		if d, ok := m.dialer.(*XCryptoDialer); ok {
+			d.KnownHostsFile = path
+		}
+	}
+}
+
 func NewSSHManager(dialer Dialer, opts ...Option) *SSHManager {
 	if dialer == nil {
 		dialer = &XCryptoDialer{}
@@ -271,6 +287,10 @@ func isRetriable(err error) bool {
 	if errors.Is(err, context.Canceled) {
 		return false
 	}
+	var hostKeyErr *HostKeyError
+	if errors.As(err, &hostKeyErr) {
+		return false
+	}
 	if errors.Is(err, context.DeadlineExceeded) {
 		return true
 	}
@@ -285,6 +305,8 @@ func isRetriable(err error) bool {
 
 type XCryptoDialer struct {
 	ConnectTimeout time.Duration
+	HostKeyMode    HostKeyMode
+	KnownHostsFile string
 }
 
 func (d *XCryptoDialer) connectTimeout() time.Duration {
@@ -294,8 +316,20 @@ func (d *XCryptoDialer) connectTimeout() time.Duration {
 	return 10 * time.Second
 }
 
+func (d *XCryptoDialer) hostKeyMode() HostKeyMode {
+	if d.HostKeyMode != "" {
+		return d.HostKeyMode
+	}
+	return HostKeyAcceptNew
+}
+
 func (d *XCryptoDialer) Dial(ctx context.Context, params ConnectionParams) (Client, error) {
 	params = withDefaults(params)
+
+	hostKeyCb, err := buildHostKeyCallback(d.hostKeyMode(), d.KnownHostsFile)
+	if err != nil {
+		return nil, fmt.Errorf("host key verification setup: %w", err)
+	}
 
 	authMethods, authCleanup, err := buildAuthMethods(params)
 	defer authCleanup()
@@ -306,7 +340,7 @@ func (d *XCryptoDialer) Dial(ctx context.Context, params ConnectionParams) (Clie
 	cfg := &gossh.ClientConfig{
 		User:            params.User,
 		Auth:            authMethods,
-		HostKeyCallback: gossh.InsecureIgnoreHostKey(),
+		HostKeyCallback: hostKeyCb,
 		Timeout:         d.connectTimeout(),
 	}
 
