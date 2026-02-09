@@ -3,7 +3,6 @@ package ssh
 import (
 	"crypto/ed25519"
 	"crypto/rand"
-	"crypto/x509"
 	"encoding/pem"
 	"net"
 	"os"
@@ -418,32 +417,6 @@ func writeTestKey(t *testing.T, dir string, name string, content []byte) string 
 		t.Fatalf("write test key %s: %v", path, err)
 	}
 	return path
-}
-
-// writeTestKeyFile generates an ed25519 key, writes it to a temp file in
-// PKCS8 PEM format (compatible with gossh.ParsePrivateKey), and returns the path.
-func writeTestKeyFile(t *testing.T) string {
-	t.Helper()
-	_, privKey, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatalf("generate ed25519 key: %v", err)
-	}
-
-	derBytes, err := x509.MarshalPKCS8PrivateKey(privKey)
-	if err != nil {
-		t.Fatalf("marshal PKCS8: %v", err)
-	}
-
-	pemBytes := pem.EncodeToMemory(&pem.Block{
-		Type:  "PRIVATE KEY",
-		Bytes: derBytes,
-	})
-
-	keyFile := filepath.Join(t.TempDir(), "id_ed25519")
-	if err := os.WriteFile(keyFile, pemBytes, 0o600); err != nil {
-		t.Fatalf("write key file: %v", err)
-	}
-	return keyFile
 }
 
 // startTestAgentEmpty starts an ssh-agent with no keys and returns the socket path.
