@@ -167,14 +167,14 @@ func TestDisconnectOneAndAll(t *testing.T) {
 		t.Fatalf("Connect(h2) error = %v", err)
 	}
 
-	if err := m.Disconnect("h1"); err != nil {
+	if err := m.Disconnect(context.Background(), "h1"); err != nil {
 		t.Fatalf("Disconnect(h1) error = %v", err)
 	}
 	if !c1.closed {
 		t.Fatal("expected h1 client closed")
 	}
 
-	if err := m.Disconnect(""); err != nil {
+	if err := m.Disconnect(context.Background(), ""); err != nil {
 		t.Fatalf("Disconnect(all) error = %v", err)
 	}
 	if !c2.closed {

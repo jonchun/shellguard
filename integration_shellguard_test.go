@@ -186,7 +186,7 @@ func (r *integrationRunner) SFTPSession(_ string) (ssh.SFTPClient, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (r *integrationRunner) Disconnect(_ string) error {
+func (r *integrationRunner) Disconnect(_ context.Context, _ string) error {
 	return nil
 }
 

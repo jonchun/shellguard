@@ -234,7 +234,7 @@ func (m *SSHManager) SFTPSession(host string) (SFTPClient, error) {
 	return client, nil
 }
 
-func (m *SSHManager) Disconnect(host string) error {
+func (m *SSHManager) Disconnect(_ context.Context, host string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 

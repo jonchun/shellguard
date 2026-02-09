@@ -108,7 +108,7 @@ func (f *fakeRunner) SFTPSession(host string) (ssh.SFTPClient, error) {
 	return f.sftpClient, nil
 }
 
-func (f *fakeRunner) Disconnect(host string) error {
+func (f *fakeRunner) Disconnect(_ context.Context, host string) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.disconnectCalled = true
@@ -482,7 +482,7 @@ func TestDisconnectCleansUpState(t *testing.T) {
 		t.Fatalf("Connect() error = %v", err)
 	}
 	core.setToolkitDeployed("h1", true)
-	if _, err := core.Disconnect(DisconnectInput{Host: "h1"}); err != nil {
+	if _, err := core.Disconnect(context.Background(), DisconnectInput{Host: "h1"}); err != nil {
 		t.Fatalf("Disconnect() error = %v", err)
 	}
 	if _, ok := core.getProbeState("h1"); ok {
@@ -881,7 +881,7 @@ func TestDisconnectLogs(t *testing.T) {
 		t.Fatalf("Connect() error = %v", err)
 	}
 
-	_, err := core.Disconnect(DisconnectInput{Host: "h1"})
+	_, err := core.Disconnect(context.Background(), DisconnectInput{Host: "h1"})
 	if err != nil {
 		t.Fatalf("Disconnect() error = %v", err)
 	}
