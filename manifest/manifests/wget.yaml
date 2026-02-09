@@ -1,0 +1,74 @@
+name: wget
+description: Non-interactive network downloader (GET-only, stdout-only policy)
+category: network
+flags:
+  - flag: "-q"
+  - flag: "-S"
+  - flag: "-O"
+    takes_value: true
+    allowed_values: ["-"]
+  - flag: "--output-document"
+    takes_value: true
+    allowed_values: ["-"]
+  - flag: "-t"
+    takes_value: true
+  - flag: "--tries"
+    takes_value: true
+  - flag: "-T"
+    takes_value: true
+  - flag: "--timeout"
+    takes_value: true
+  - flag: "--connect-timeout"
+    takes_value: true
+  - flag: "--dns-timeout"
+    takes_value: true
+  - flag: "--read-timeout"
+    takes_value: true
+  - flag: "--spider"
+  - flag: "--max-redirect"
+    takes_value: true
+  - flag: "--no-check-certificate"
+  - flag: "-r"
+    deny: true
+    reason: "Recursive downloading is not allowed"
+  - flag: "--recursive"
+    deny: true
+    reason: "Recursive downloading is not allowed"
+  - flag: "-m"
+    deny: true
+    reason: "Mirroring is not allowed"
+  - flag: "--mirror"
+    deny: true
+    reason: "Mirroring is not allowed"
+  - flag: "--post-data"
+    deny: true
+    reason: "Only GET requests are allowed"
+  - flag: "--post-file"
+    deny: true
+    reason: "Only GET requests are allowed"
+  - flag: "--method"
+    deny: true
+    reason: "Only GET requests are allowed"
+  - flag: "--body-data"
+    deny: true
+    reason: "Request bodies are not allowed"
+  - flag: "--body-file"
+    deny: true
+    reason: "Request bodies are not allowed"
+  - flag: "--upload-file"
+    deny: true
+    reason: "Uploading files is not allowed"
+  - flag: "-i"
+    deny: true
+    reason: "Reading URLs from files is not allowed"
+  - flag: "--input-file"
+    deny: true
+    reason: "Reading URLs from files is not allowed"
+  - flag: "-e"
+    deny: true
+    reason: "Executing .wgetrc commands is not allowed"
+  - flag: "--execute"
+    deny: true
+    reason: "Executing .wgetrc commands is not allowed"
+stdin: false
+stdout: true

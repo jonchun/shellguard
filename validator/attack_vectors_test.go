@@ -1220,7 +1220,7 @@ func TestDeniedCommandsCoverage(t *testing.T) {
 		"passwd", "su",
 	}
 	deniedNetwork := []string{
-		"nc", "ncat", "socat", "telnet", "scp", "sftp", "wget",
+		"nc", "ncat", "socat", "telnet", "scp", "sftp",
 		"ip", "iptables", "nft",
 	}
 	deniedOther := []string{

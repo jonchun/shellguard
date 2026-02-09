@@ -47,7 +47,7 @@ func TestDenyManifestReasonsAndCount(t *testing.T) {
 		}
 	}
 
-	if got, want := denyCount, 95; got != want {
+	if got, want := denyCount, 94; got != want {
 		t.Fatalf("deny manifest count = %d, want %d", got, want)
 	}
 }

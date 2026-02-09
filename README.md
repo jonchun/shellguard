@@ -6,7 +6,7 @@ ShellGuard is an [MCP](https://modelcontextprotocol.io/) server that gives LLM a
 
 Commands are restricted to a curated set of read-only tools. Destructive operations are blocked with actionable suggestions so the LLM can self-correct and keep investigating:
 
-- `wget` -> `"Use curl with GET-only policy for network diagnostics"`
+- `wget -r` -> `"Recursive downloading is not allowed"`
 - `tail -f` -> `"Follow mode hangs until timeout. Use tail -n 100 for recent lines."`
 - `sed` -> `"Stream editing can modify files -- read-only access only. Use grep for searching."`
 - `$HOME/file` -> `"Variable expansion will not expand. Use absolute paths."`

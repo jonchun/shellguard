@@ -1,3 +1,0 @@
-name: wget
-deny: true
-reason: "Use curl with GET-only policy for network diagnostics"
