@@ -344,6 +344,66 @@ func (m *mockWriteCloser) Close() error {
 
 var _ ssh.SFTPClient = (*mockSFTPClient)(nil)
 
+func TestDownloadFileRejectsOversizedResponse(t *testing.T) {
+	// Create a response larger than the limit
+	oversizedPayload := make([]byte, maxToolDownloadBytes+1)
+	for i := range oversizedPayload {
+		oversizedPayload[i] = 'x'
+	}
+
+	client := &http.Client{
+		Transport: roundTripFunc(func(_ *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(bytes.NewReader(oversizedPayload)),
+				Header:     make(http.Header),
+			}, nil
+		}),
+	}
+
+	oldClient := downloadHTTPClient
+	t.Cleanup(func() { downloadHTTPClient = oldClient })
+	downloadHTTPClient = client
+
+	_, err := downloadFile(context.Background(), "https://example.com/tool")
+	if err == nil {
+		t.Fatal("expected error for oversized response, got nil")
+	}
+	if !strings.Contains(err.Error(), "exceeded") {
+		t.Fatalf("expected error message to contain 'exceeded', got: %v", err)
+	}
+}
+
+func TestDownloadFileAcceptsUnderLimitResponse(t *testing.T) {
+	// Create a response exactly at the limit - should succeed
+	payload := make([]byte, maxToolDownloadBytes)
+	for i := range payload {
+		payload[i] = 'y'
+	}
+
+	client := &http.Client{
+		Transport: roundTripFunc(func(_ *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(bytes.NewReader(payload)),
+				Header:     make(http.Header),
+			}, nil
+		}),
+	}
+
+	oldClient := downloadHTTPClient
+	t.Cleanup(func() { downloadHTTPClient = oldClient })
+	downloadHTTPClient = client
+
+	body, err := downloadFile(context.Background(), "https://example.com/tool")
+	if err != nil {
+		t.Fatalf("unexpected error for valid size response: %v", err)
+	}
+	if len(body) != maxToolDownloadBytes {
+		t.Fatalf("body length = %d, want %d", len(body), maxToolDownloadBytes)
+	}
+}
+
 func TestDeployToolsContextCancellation(t *testing.T) {
 	cacheDir := t.TempDir()
 	oldSpecs := downloadSpecs
