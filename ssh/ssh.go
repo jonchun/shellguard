@@ -144,6 +144,9 @@ func (m *SSHManager) Connect(ctx context.Context, params ConnectionParams) error
 		client, err := m.dialer.Dial(ctx, params)
 		if err == nil {
 			m.mu.Lock()
+			if old := m.connections[origHost]; old != nil && old.Client != nil {
+				_ = old.Client.Close()
+			}
 			m.connections[origHost] = &ManagedConnection{Client: client, Params: params}
 			m.mu.Unlock()
 			return nil
