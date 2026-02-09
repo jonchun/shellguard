@@ -117,6 +117,7 @@ func (m *SSHManager) Connect(ctx context.Context, params ConnectionParams) error
 	if params.Host == "" {
 		return errors.New("host is required")
 	}
+	origHost := params.Host
 	if m.resolveConfig != nil {
 		params = m.resolveConfig(params)
 	}
@@ -127,7 +128,7 @@ func (m *SSHManager) Connect(ctx context.Context, params ConnectionParams) error
 		client, err := m.dialer.Dial(ctx, params)
 		if err == nil {
 			m.mu.Lock()
-			m.connections[params.Host] = &ManagedConnection{Client: client, Params: params}
+			m.connections[origHost] = &ManagedConnection{Client: client, Params: params}
 			m.mu.Unlock()
 			return nil
 		}

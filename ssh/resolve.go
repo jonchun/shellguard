@@ -25,7 +25,7 @@ func newResolver(path string) *resolver {
 	if err != nil {
 		return &resolver{}
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	cfg, err := sshconfig.Decode(f)
 	if err != nil {

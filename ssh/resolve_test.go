@@ -309,4 +309,18 @@ Host myalias
 	if got, want := dialed.Port, 2222; got != want {
 		t.Fatalf("dialed Port = %d, want %d", got, want)
 	}
+
+	// Connection should be stored under the original alias, not the resolved hostname.
+	conn, err := m.ResolveConnection("myalias")
+	if err != nil {
+		t.Fatalf("ResolveConnection(alias) error = %v", err)
+	}
+	if got, want := conn.Params.Host, "10.0.0.99"; got != want {
+		t.Fatalf("stored Params.Host = %q, want %q", got, want)
+	}
+
+	// Looking up by resolved hostname should fail.
+	if _, err := m.ResolveConnection("10.0.0.99"); err == nil {
+		t.Fatal("expected error looking up by resolved hostname, got nil")
+	}
 }
