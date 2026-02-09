@@ -64,6 +64,12 @@ func New(cfg Config) (*server.Core, error) {
 		if userCfg.SSH.ConnectTimeout != nil {
 			sshOpts = append(sshOpts, ssh.WithConnectTimeout(userCfg.SSH.ConnectTimeout.Duration()))
 		}
+		if userCfg.SSH.HostKeyChecking != nil {
+			sshOpts = append(sshOpts, ssh.WithHostKeyChecking(ssh.HostKeyMode(*userCfg.SSH.HostKeyChecking)))
+		}
+		if userCfg.SSH.KnownHostsFile != nil {
+			sshOpts = append(sshOpts, ssh.WithKnownHostsFile(*userCfg.SSH.KnownHostsFile))
+		}
 	}
 
 	runner := cfg.Executor
