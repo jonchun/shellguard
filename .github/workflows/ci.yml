@@ -21,7 +21,7 @@ jobs:
       - run: go test ./... -race -count=1
       - run: go vet ./...
 
-  lint:
+  checks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,12 +31,6 @@ jobs:
       - uses: golangci/golangci-lint-action@v7
         with:
           version: v2.8.0
-
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
       - run: make build
+      - run: go install golang.org/x/vuln/cmd/govulncheck@latest
+      - run: govulncheck ./...
