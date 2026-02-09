@@ -29,6 +29,10 @@ const (
 	defaultDownloadDir = "/tmp/shellguard-downloads"
 )
 
+// maxCollisionRetries is the upper bound on filename collision retries in
+// collisionSafePath. A var (not const) so tests can temporarily lower it.
+var maxCollisionRetries = 10000
+
 // Executor runs commands on remote targets.
 type Executor interface {
 	Connect(ctx context.Context, params ssh.ConnectionParams) error
@@ -148,6 +152,11 @@ func NewCore(registry map[string]*manifest.Manifest, runner Executor, logger *sl
 		opt(c)
 	}
 	return c
+}
+
+// Logger returns the logger used by this Core.
+func (c *Core) Logger() *slog.Logger {
+	return c.logger
 }
 
 func (c *Core) Connect(ctx context.Context, in ConnectInput) (map[string]any, error) {
@@ -625,7 +634,7 @@ func collisionSafePath(dir, filename string) (string, error) {
 		return "", fmt.Errorf("stat local path %s: %w", candidate, err)
 	}
 
-	for i := 1; ; i++ {
+	for i := 1; i <= maxCollisionRetries; i++ {
 		candidate = filepath.Join(dir, fmt.Sprintf("%s_%d%s", base, i, ext))
 		if _, err := os.Stat(candidate); errors.Is(err, os.ErrNotExist) {
 			return candidate, nil
@@ -633,6 +642,8 @@ func collisionSafePath(dir, filename string) (string, error) {
 			return "", fmt.Errorf("stat local path %s: %w", candidate, err)
 		}
 	}
+
+	return "", fmt.Errorf("filename collision: exhausted %d candidates for %q", maxCollisionRetries, filename)
 }
 
 func (c *Core) Sleep(ctx context.Context, in SleepInput) (map[string]any, error) {
@@ -658,7 +669,7 @@ type ServerOptions struct {
 	Version string
 }
 
-func NewMCPServer(core *Core, logger *slog.Logger, opts ...ServerOptions) *mcp.Server {
+func NewMCPServer(core *Core, opts ...ServerOptions) *mcp.Server {
 	name := "shellguard"
 	version := "0.1.0"
 	if len(opts) > 0 {
@@ -669,7 +680,7 @@ func NewMCPServer(core *Core, logger *slog.Logger, opts ...ServerOptions) *mcp.S
 			version = opts[0].Version
 		}
 	}
-	srv := mcp.NewServer(&mcp.Implementation{Name: name, Version: version}, &mcp.ServerOptions{Logger: logger})
+	srv := mcp.NewServer(&mcp.Implementation{Name: name, Version: version}, &mcp.ServerOptions{Logger: core.Logger()})
 
 	mcp.AddTool(srv, &mcp.Tool{Name: "connect", Description: "Connect to a remote server via SSH"},
 		func(ctx context.Context, _ *mcp.CallToolRequest, in ConnectInput) (*mcp.CallToolResult, map[string]any, error) {
@@ -735,8 +746,8 @@ func NewMCPServer(core *Core, logger *slog.Logger, opts ...ServerOptions) *mcp.S
 	return srv
 }
 
-func RunStdio(ctx context.Context, core *Core, logger *slog.Logger, opts ...ServerOptions) error {
-	server := NewMCPServer(core, logger, opts...)
+func RunStdio(ctx context.Context, core *Core, opts ...ServerOptions) error {
+	server := NewMCPServer(core, opts...)
 	if err := server.Run(ctx, &mcp.StdioTransport{}); err != nil {
 		return fmt.Errorf("run mcp stdio server: %w", err)
 	}
@@ -744,8 +755,8 @@ func RunStdio(ctx context.Context, core *Core, logger *slog.Logger, opts ...Serv
 }
 
 // NewHTTPHandler returns an http.Handler serving MCP over SSE.
-func NewHTTPHandler(core *Core, logger *slog.Logger, opts ...ServerOptions) http.Handler {
-	srv := NewMCPServer(core, logger, opts...)
+func NewHTTPHandler(core *Core, opts ...ServerOptions) http.Handler {
+	srv := NewMCPServer(core, opts...)
 	return mcp.NewSSEHandler(func(_ *http.Request) *mcp.Server {
 		return srv
 	}, nil)

@@ -46,7 +46,7 @@ func run(ctx context.Context, logger *slog.Logger, args []string) error {
 }
 
 func runStdio(ctx context.Context, logger *slog.Logger) error {
-	err := shellguard.RunStdio(ctx, shellguard.Config{}, logger)
+	err := shellguard.RunStdio(ctx, shellguard.Config{Logger: logger})
 	if errors.Is(err, context.Canceled) {
 		return nil
 	}

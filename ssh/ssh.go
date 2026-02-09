@@ -56,11 +56,12 @@ type ManagedConnection struct {
 }
 
 type SSHManager struct {
-	mu          sync.Mutex
-	dialer      Dialer
-	connections map[string]*ManagedConnection
-	retries     int
-	backoff     time.Duration
+	mu            sync.Mutex
+	dialer        Dialer
+	connections   map[string]*ManagedConnection
+	retries       int
+	backoff       time.Duration
+	resolveConfig func(ConnectionParams) ConnectionParams
 }
 
 type Option func(*SSHManager)
@@ -110,10 +111,11 @@ func NewSSHManager(dialer Dialer, opts ...Option) *SSHManager {
 		dialer = &XCryptoDialer{}
 	}
 	m := &SSHManager{
-		dialer:      dialer,
-		connections: make(map[string]*ManagedConnection),
-		retries:     2,
-		backoff:     250 * time.Millisecond,
+		dialer:        dialer,
+		connections:   make(map[string]*ManagedConnection),
+		retries:       2,
+		backoff:       250 * time.Millisecond,
+		resolveConfig: defaultApplySSHConfig,
 	}
 	for _, opt := range opts {
 		opt(m)
@@ -128,17 +130,21 @@ func (m *SSHManager) Connected() bool {
 }
 
 func (m *SSHManager) Connect(ctx context.Context, params ConnectionParams) error {
-	params = withDefaults(params)
 	if params.Host == "" {
 		return errors.New("host is required")
 	}
+	origHost := params.Host
+	if m.resolveConfig != nil {
+		params = m.resolveConfig(params)
+	}
+	params = withDefaults(params)
 
 	var lastErr error
 	for attempt := 0; attempt <= m.retries; attempt++ {
 		client, err := m.dialer.Dial(ctx, params)
 		if err == nil {
 			m.mu.Lock()
-			m.connections[params.Host] = &ManagedConnection{Client: client, Params: params}
+			m.connections[origHost] = &ManagedConnection{Client: client, Params: params}
 			m.mu.Unlock()
 			return nil
 		}
@@ -325,17 +331,18 @@ func (d *XCryptoDialer) Dial(ctx context.Context, params ConnectionParams) (Clie
 		return nil, fmt.Errorf("host key verification setup: %w", err)
 	}
 
-	cfg := &gossh.ClientConfig{
-		User:            params.User,
-		HostKeyCallback: hostKeyCb,
-		Timeout:         d.connectTimeout(),
-	}
-
-	authMethods, err := buildAuthMethods(params)
+	authMethods, authCleanup, err := buildAuthMethods(params)
+	defer authCleanup()
 	if err != nil {
 		return nil, err
 	}
-	cfg.Auth = authMethods
+
+	cfg := &gossh.ClientConfig{
+		User:            params.User,
+		Auth:            authMethods,
+		HostKeyCallback: hostKeyCb,
+		Timeout:         d.connectTimeout(),
+	}
 
 	addr := fmt.Sprintf("%s:%d", params.Host, params.Port)
 	var netDialer net.Dialer

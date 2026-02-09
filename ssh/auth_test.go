@@ -4,36 +4,100 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/pem"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	gossh "golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/agent"
 )
 
-// generateTestKeyPEM creates a valid ed25519 private key in PEM format for testing.
-func generateTestKeyPEM(t *testing.T) []byte {
-	t.Helper()
-	_, priv, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		t.Fatalf("generate ed25519 key: %v", err)
+// --- agentSigners tests ---
+
+func TestAgentSigners_NoAuthSock(t *testing.T) {
+	t.Setenv("SSH_AUTH_SOCK", "")
+	signers, cleanup := agentSigners()
+	defer cleanup()
+	if signers != nil {
+		t.Fatalf("expected nil signers when SSH_AUTH_SOCK is empty, got %d", len(signers))
 	}
-	block, err := gossh.MarshalPrivateKey(priv, "")
-	if err != nil {
-		t.Fatalf("marshal private key: %v", err)
-	}
-	return pem.EncodeToMemory(block)
 }
 
-// writeTestKey writes a PEM key to a temp file and returns its path.
-func writeTestKey(t *testing.T, dir string, name string, content []byte) string {
-	t.Helper()
-	path := filepath.Join(dir, name)
-	if err := os.WriteFile(path, content, 0600); err != nil {
-		t.Fatalf("write test key %s: %v", path, err)
+func TestAgentSigners_UnreachableSocket(t *testing.T) {
+	t.Setenv("SSH_AUTH_SOCK", "/tmp/shellguard-test-nonexistent.sock")
+	signers, cleanup := agentSigners()
+	defer cleanup()
+	if signers != nil {
+		t.Fatalf("expected nil signers for unreachable socket, got %d", len(signers))
 	}
-	return path
+}
+
+func TestAgentSigners_EmptyAgent(t *testing.T) {
+	sockPath := startTestAgentEmpty(t)
+	t.Setenv("SSH_AUTH_SOCK", sockPath)
+
+	signers, cleanup := agentSigners()
+	defer cleanup()
+	if signers != nil {
+		t.Fatalf("expected nil signers from empty agent, got %d", len(signers))
+	}
+}
+
+func TestAgentSigners_WithLoadedKey(t *testing.T) {
+	sockPath := startTestAgentWithKey(t)
+	t.Setenv("SSH_AUTH_SOCK", sockPath)
+
+	signers, cleanup := agentSigners()
+	defer cleanup()
+	if signers == nil {
+		t.Fatal("expected non-nil signers from agent with loaded key")
+	}
+	if len(signers) != 1 {
+		t.Fatalf("expected 1 signer, got %d", len(signers))
+	}
+}
+
+func TestAgentSigners_CanSignBeforeCleanup(t *testing.T) {
+	sockPath := startTestAgentWithKey(t)
+	t.Setenv("SSH_AUTH_SOCK", sockPath)
+
+	signers, cleanup := agentSigners()
+	defer cleanup()
+	if signers == nil {
+		t.Fatal("expected non-nil signers")
+	}
+
+	// Verify the signer can actually produce a signature while the
+	// agent connection is still open.
+	data := []byte("test data to sign")
+	sig, err := signers[0].Sign(rand.Reader, data)
+	if err != nil {
+		t.Fatalf("Sign() error = %v", err)
+	}
+	if sig == nil {
+		t.Fatal("expected non-nil signature")
+	}
+}
+
+func TestAgentSigners_CannotSignAfterCleanup(t *testing.T) {
+	sockPath := startTestAgentWithKey(t)
+	t.Setenv("SSH_AUTH_SOCK", sockPath)
+
+	signers, cleanup := agentSigners()
+	if signers == nil {
+		t.Fatal("expected non-nil signers")
+	}
+
+	// Close the connection, then try to sign — should fail.
+	cleanup()
+
+	data := []byte("test data to sign")
+	_, err := signers[0].Sign(rand.Reader, data)
+	if err == nil {
+		t.Fatal("expected Sign() to fail after cleanup, but it succeeded")
+	}
 }
 
 // --- defaultKeyPaths tests ---
@@ -143,25 +207,25 @@ func TestNormalizePathRelative(t *testing.T) {
 // --- buildAuthMethods tests ---
 
 func TestBuildAuthMethodsNoIdentityFileNoDefaults(t *testing.T) {
-	// When no explicit key and no default keys exist on disk,
-	// buildAuthMethods should return an empty (but non-nil) slice and no error.
-	methods, err := buildAuthMethods(ConnectionParams{Host: "example.com"})
+	t.Setenv("SSH_AUTH_SOCK", "")
+	methods, cleanup, err := buildAuthMethods(ConnectionParams{Host: "example.com"})
+	defer cleanup()
 	if err != nil {
 		t.Fatalf("buildAuthMethods() error = %v", err)
 	}
-	// Methods may or may not be empty depending on whether default keys
-	// exist on the test machine. We just verify no error occurred.
 	_ = methods
 }
 
 func TestBuildAuthMethodsExplicitIdentitySuccess(t *testing.T) {
+	t.Setenv("SSH_AUTH_SOCK", "")
 	dir := t.TempDir()
 	keyPath := writeTestKey(t, dir, "explicit_key", generateTestKeyPEM(t))
 
-	methods, err := buildAuthMethods(ConnectionParams{
+	methods, cleanup, err := buildAuthMethods(ConnectionParams{
 		Host:         "example.com",
 		IdentityFile: keyPath,
 	})
+	defer cleanup()
 	if err != nil {
 		t.Fatalf("buildAuthMethods() error = %v", err)
 	}
@@ -171,10 +235,12 @@ func TestBuildAuthMethodsExplicitIdentitySuccess(t *testing.T) {
 }
 
 func TestBuildAuthMethodsExplicitIdentityFileMissing(t *testing.T) {
-	_, err := buildAuthMethods(ConnectionParams{
+	t.Setenv("SSH_AUTH_SOCK", "")
+	_, cleanup, err := buildAuthMethods(ConnectionParams{
 		Host:         "example.com",
 		IdentityFile: "/nonexistent/key",
 	})
+	defer cleanup()
 	if err == nil {
 		t.Fatal("expected error for missing explicit identity file")
 	}
@@ -184,13 +250,15 @@ func TestBuildAuthMethodsExplicitIdentityFileMissing(t *testing.T) {
 }
 
 func TestBuildAuthMethodsExplicitIdentityFileInvalid(t *testing.T) {
+	t.Setenv("SSH_AUTH_SOCK", "")
 	dir := t.TempDir()
 	keyPath := writeTestKey(t, dir, "bad_key", []byte("not a valid key"))
 
-	_, err := buildAuthMethods(ConnectionParams{
+	_, cleanup, err := buildAuthMethods(ConnectionParams{
 		Host:         "example.com",
 		IdentityFile: keyPath,
 	})
+	defer cleanup()
 	if err == nil {
 		t.Fatal("expected error for invalid explicit identity file")
 	}
@@ -200,36 +268,35 @@ func TestBuildAuthMethodsExplicitIdentityFileInvalid(t *testing.T) {
 }
 
 func TestBuildAuthMethodsDeduplication(t *testing.T) {
-	// Create a temp dir that mimics ~/.ssh/ with a known key
+	t.Setenv("SSH_AUTH_SOCK", "")
 	dir := t.TempDir()
 	keyPEM := generateTestKeyPEM(t)
 	keyPath := writeTestKey(t, dir, "id_ed25519", keyPEM)
 
-	// buildAuthMethods with explicit key pointing to the same path
-	// should load the key only once.
-	methods, err := buildAuthMethodsWithDefaults(ConnectionParams{
+	methods, cleanup, err := buildAuthMethodsWithDefaults(ConnectionParams{
 		Host:         "example.com",
 		IdentityFile: keyPath,
 	}, []string{keyPath})
+	defer cleanup()
 	if err != nil {
 		t.Fatalf("buildAuthMethodsWithDefaults() error = %v", err)
 	}
-	// The explicit key should produce 1 method. The default path is the same
-	// file, so deduplication should prevent a second method.
 	if len(methods) != 1 {
 		t.Errorf("expected 1 auth method (dedup), got %d", len(methods))
 	}
 }
 
 func TestBuildAuthMethodsDefaultKeysLoaded(t *testing.T) {
+	t.Setenv("SSH_AUTH_SOCK", "")
 	dir := t.TempDir()
 	keyPEM := generateTestKeyPEM(t)
 	ed25519Path := writeTestKey(t, dir, "id_ed25519", keyPEM)
 	rsaPath := writeTestKey(t, dir, "id_rsa", keyPEM)
 
-	methods, err := buildAuthMethodsWithDefaults(ConnectionParams{
+	methods, cleanup, err := buildAuthMethodsWithDefaults(ConnectionParams{
 		Host: "example.com",
 	}, []string{ed25519Path, rsaPath})
+	defer cleanup()
 	if err != nil {
 		t.Fatalf("buildAuthMethodsWithDefaults() error = %v", err)
 	}
@@ -239,9 +306,11 @@ func TestBuildAuthMethodsDefaultKeysLoaded(t *testing.T) {
 }
 
 func TestBuildAuthMethodsDefaultKeysMissingSkipped(t *testing.T) {
-	methods, err := buildAuthMethodsWithDefaults(ConnectionParams{
+	t.Setenv("SSH_AUTH_SOCK", "")
+	methods, cleanup, err := buildAuthMethodsWithDefaults(ConnectionParams{
 		Host: "example.com",
 	}, []string{"/nonexistent/id_ed25519", "/nonexistent/id_rsa"})
+	defer cleanup()
 	if err != nil {
 		t.Fatalf("buildAuthMethodsWithDefaults() error = %v", err)
 	}
@@ -251,12 +320,14 @@ func TestBuildAuthMethodsDefaultKeysMissingSkipped(t *testing.T) {
 }
 
 func TestBuildAuthMethodsDefaultKeysInvalidSkipped(t *testing.T) {
+	t.Setenv("SSH_AUTH_SOCK", "")
 	dir := t.TempDir()
 	badPath := writeTestKey(t, dir, "id_ed25519", []byte("garbage"))
 
-	methods, err := buildAuthMethodsWithDefaults(ConnectionParams{
+	methods, cleanup, err := buildAuthMethodsWithDefaults(ConnectionParams{
 		Host: "example.com",
 	}, []string{badPath})
+	defer cleanup()
 	if err != nil {
 		t.Fatalf("buildAuthMethodsWithDefaults() error = %v", err)
 	}
@@ -266,23 +337,131 @@ func TestBuildAuthMethodsDefaultKeysInvalidSkipped(t *testing.T) {
 }
 
 func TestBuildAuthMethodsExplicitPlusDefaults(t *testing.T) {
+	t.Setenv("SSH_AUTH_SOCK", "")
 	dir := t.TempDir()
 	keyPEM := generateTestKeyPEM(t)
 	explicitPath := writeTestKey(t, dir, "explicit_key", keyPEM)
 
-	// Generate a different key for the default
 	defaultKeyPEM := generateTestKeyPEM(t)
 	defaultPath := writeTestKey(t, dir, "id_ed25519", defaultKeyPEM)
 
-	methods, err := buildAuthMethodsWithDefaults(ConnectionParams{
+	methods, cleanup, err := buildAuthMethodsWithDefaults(ConnectionParams{
 		Host:         "example.com",
 		IdentityFile: explicitPath,
 	}, []string{defaultPath})
+	defer cleanup()
 	if err != nil {
 		t.Fatalf("buildAuthMethodsWithDefaults() error = %v", err)
 	}
-	// Explicit key (1) + default key (1) = 2
 	if len(methods) != 2 {
 		t.Errorf("expected 2 auth methods (explicit + default), got %d", len(methods))
 	}
+}
+
+func TestBuildAuthMethodsAgentOnly(t *testing.T) {
+	sockPath := startTestAgentWithKey(t)
+	t.Setenv("SSH_AUTH_SOCK", sockPath)
+
+	methods, cleanup, err := buildAuthMethodsWithDefaults(ConnectionParams{
+		Host: "example.com",
+	}, nil)
+	defer cleanup()
+	if err != nil {
+		t.Fatalf("buildAuthMethodsWithDefaults() error = %v", err)
+	}
+	if len(methods) != 1 {
+		t.Fatalf("expected 1 auth method (agent), got %d", len(methods))
+	}
+}
+
+func TestBuildAuthMethodsExplicitPlusAgent(t *testing.T) {
+	sockPath := startTestAgentWithKey(t)
+	t.Setenv("SSH_AUTH_SOCK", sockPath)
+	dir := t.TempDir()
+	keyPath := writeTestKey(t, dir, "explicit_key", generateTestKeyPEM(t))
+
+	methods, cleanup, err := buildAuthMethodsWithDefaults(ConnectionParams{
+		Host:         "example.com",
+		IdentityFile: keyPath,
+	}, nil)
+	defer cleanup()
+	if err != nil {
+		t.Fatalf("buildAuthMethodsWithDefaults() error = %v", err)
+	}
+	if len(methods) != 2 {
+		t.Fatalf("expected 2 auth methods (explicit + agent), got %d", len(methods))
+	}
+}
+
+// --- test helpers ---
+
+// generateTestKeyPEM creates a valid ed25519 private key in PEM format for testing.
+func generateTestKeyPEM(t *testing.T) []byte {
+	t.Helper()
+	_, priv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("generate ed25519 key: %v", err)
+	}
+	block, err := gossh.MarshalPrivateKey(priv, "")
+	if err != nil {
+		t.Fatalf("marshal private key: %v", err)
+	}
+	return pem.EncodeToMemory(block)
+}
+
+// writeTestKey writes a PEM key to a temp file and returns its path.
+func writeTestKey(t *testing.T, dir string, name string, content []byte) string {
+	t.Helper()
+	path := filepath.Join(dir, name)
+	if err := os.WriteFile(path, content, 0600); err != nil {
+		t.Fatalf("write test key %s: %v", path, err)
+	}
+	return path
+}
+
+// startTestAgentEmpty starts an ssh-agent with no keys and returns the socket path.
+func startTestAgentEmpty(t *testing.T) string {
+	t.Helper()
+	return startTestAgentKeyring(t, agent.NewKeyring())
+}
+
+// startTestAgentWithKey starts an ssh-agent with one ed25519 key loaded.
+func startTestAgentWithKey(t *testing.T) string {
+	t.Helper()
+	keyring := agent.NewKeyring()
+
+	_, privKey, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("generate ed25519 key: %v", err)
+	}
+	if err := keyring.Add(agent.AddedKey{PrivateKey: privKey}); err != nil {
+		t.Fatalf("add key to agent: %v", err)
+	}
+	return startTestAgentKeyring(t, keyring)
+}
+
+// startTestAgentKeyring starts an ssh-agent serving the given keyring.
+func startTestAgentKeyring(t *testing.T, keyring agent.Agent) string {
+	t.Helper()
+	sockPath := filepath.Join(t.TempDir(), "agent.sock")
+	ln, err := net.Listen("unix", sockPath)
+	if err != nil {
+		t.Fatalf("listen: %v", err)
+	}
+	t.Cleanup(func() { _ = ln.Close() })
+
+	go func() {
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				return
+			}
+			go func() {
+				_ = agent.ServeAgent(keyring, conn)
+				_ = conn.Close()
+			}()
+		}
+	}()
+
+	return sockPath
 }

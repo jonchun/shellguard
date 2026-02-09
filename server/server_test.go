@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"sync"
@@ -613,10 +614,65 @@ func TestDownloadNameCollision(t *testing.T) {
 	}
 }
 
+func TestCollisionSafePath_NoCollision(t *testing.T) {
+	dir := t.TempDir()
+	got, err := collisionSafePath(dir, "report.csv")
+	if err != nil {
+		t.Fatalf("collisionSafePath() error = %v", err)
+	}
+	want := filepath.Join(dir, "report.csv")
+	if got != want {
+		t.Fatalf("collisionSafePath() = %q, want %q", got, want)
+	}
+}
+
+func TestCollisionSafePath_WithCollisions(t *testing.T) {
+	dir := t.TempDir()
+	// Create the base file and first two numbered variants.
+	for _, name := range []string{"data.log", "data_1.log", "data_2.log"} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("x"), 0o644); err != nil {
+			t.Fatalf("WriteFile(%q) error = %v", name, err)
+		}
+	}
+
+	got, err := collisionSafePath(dir, "data.log")
+	if err != nil {
+		t.Fatalf("collisionSafePath() error = %v", err)
+	}
+	want := filepath.Join(dir, "data_3.log")
+	if got != want {
+		t.Fatalf("collisionSafePath() = %q, want %q", got, want)
+	}
+}
+
+func TestCollisionSafePath_Exhausted(t *testing.T) {
+	dir := t.TempDir()
+
+	// Temporarily lower the retry limit.
+	orig := maxCollisionRetries
+	maxCollisionRetries = 3
+	t.Cleanup(func() { maxCollisionRetries = orig })
+
+	// Create base file plus numbered variants 1..3 to exhaust all candidates.
+	for _, name := range []string{"f.txt", "f_1.txt", "f_2.txt", "f_3.txt"} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("x"), 0o644); err != nil {
+			t.Fatalf("WriteFile(%q) error = %v", name, err)
+		}
+	}
+
+	_, err := collisionSafePath(dir, "f.txt")
+	if err == nil {
+		t.Fatal("expected error when all candidates exhausted")
+	}
+	if !strings.Contains(err.Error(), "collision") {
+		t.Fatalf("error should mention collision, got: %v", err)
+	}
+}
+
 func TestNewMCPServerRegistersTools(t *testing.T) {
 	ctx := context.Background()
 	core := NewCore(basicRegistry(), newFakeRunner(), nil)
-	s := NewMCPServer(core, nil)
+	s := NewMCPServer(core)
 	c := mcp.NewClient(&mcp.Implementation{Name: "test-client", Version: "v0.0.1"}, nil)
 	t1, t2 := mcp.NewInMemoryTransports()
 	ss, err := s.Connect(ctx, t1, nil)
@@ -683,6 +739,22 @@ func TestNewCoreNilLoggerUsesDiscard(t *testing.T) {
 	core := NewCore(basicRegistry(), newFakeRunner(), nil)
 	if core.logger == nil {
 		t.Fatal("expected discard logger, got nil")
+	}
+}
+
+func TestCoreLoggerReturnsLogger(t *testing.T) {
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&buf, nil))
+	core := NewCore(basicRegistry(), newFakeRunner(), logger)
+	if got := core.Logger(); got != logger {
+		t.Fatalf("Logger() = %v, want %v", got, logger)
+	}
+}
+
+func TestCoreLoggerReturnsDiscardWhenNil(t *testing.T) {
+	core := NewCore(basicRegistry(), newFakeRunner(), nil)
+	if got := core.Logger(); got == nil {
+		t.Fatal("Logger() should return discard logger, got nil")
 	}
 }
 

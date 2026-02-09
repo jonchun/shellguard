@@ -98,15 +98,12 @@ func New(cfg Config) (*server.Core, error) {
 }
 
 // RunStdio creates a server from cfg and runs it over stdin/stdout.
-func RunStdio(ctx context.Context, cfg Config, logger *slog.Logger) error {
-	if cfg.Logger == nil {
-		cfg.Logger = logger
-	}
+func RunStdio(ctx context.Context, cfg Config) error {
 	core, err := New(cfg)
 	if err != nil {
 		return err
 	}
-	return server.RunStdio(ctx, core, logger, server.ServerOptions{
+	return server.RunStdio(ctx, core, server.ServerOptions{
 		Name:    cfg.Name,
 		Version: cfg.Version,
 	})
