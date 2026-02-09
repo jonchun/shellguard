@@ -236,7 +236,7 @@ func main() {
     ctx := context.Background()
     logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 
-    err := shellguard.RunStdio(ctx, shellguard.Config{}, logger)
+    err := shellguard.RunStdio(ctx, shellguard.Config{Logger: logger})
     if err != nil {
         os.Exit(1)
     }
