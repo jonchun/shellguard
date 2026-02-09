@@ -352,38 +352,35 @@ func TestParserEscapes_PathBasedCommandBypass(t *testing.T) {
 
 // 5. Sudo Bypass Attempts
 //
-// ANALYSIS: validateSudo only recognizes two patterns:
+// ANALYSIS: validateSudo only supports two patterns:
 //   1. sudo -u <user> <command> [args...]
 //   2. sudo <command> [args...]
 //
-// It does NOT handle arbitrary sudo flags like -s (shell), -i (login shell),
-// or -- (end of options). An attacker could try:
-//   - sudo -s  (spawns a shell — but has no command, and 'sudo' with args[0]="-s"
-//     would try to validate "-s" as a command name, which would fail)
-//   - sudo -i  (login shell — same issue)
-//   - sudo -- bash  (parsed as command="--", fails validation)
-//   - sudo -u root -s  (args=[-u, root, -s], inner command="-s", fails)
+// All other sudo flags (-s, -i, -E, -H, --, --login, etc.) are explicitly
+// rejected with a clear error message. This is enforced by design:
+// any argument starting with "-" (other than "-u") is rejected before
+// the inner command is reached.
 
 func TestSudoBypass_ShellFlags(t *testing.T) {
 	registry := loadRegistry(t)
 
 	sudoBypasses := []string{
-		// sudo -s: args[0] = "-s", validated as command "-s" → not in registry.
+		// sudo -s: explicitly rejected as unsupported flag.
 		"sudo -s",
-		// sudo -i: spawns login shell.
+		// sudo -i: explicitly rejected as unsupported flag.
 		"sudo -i",
-		// sudo -s with command: args[0] = "-s", validated as command "-s".
+		// sudo -s with command: -s rejected before bash is reached.
 		"sudo -s bash",
-		// sudo -i with command: args[0] = "-i", validated as command "-i".
+		// sudo -i with command: -i rejected before bash is reached.
 		"sudo -i bash",
-		// sudo with -- to bypass flag parsing.
+		// sudo with -- to bypass flag parsing: -- rejected as unsupported.
 		"sudo -- bash",
 		// sudo with extra flags before the command.
 		"sudo -E bash",
 		"sudo -H bash",
-		// sudo with combined flags
+		// sudo with combined flags: rejected as unsupported.
 		"sudo -sH",
-		// sudo -u root -s: inner command becomes "-s".
+		// sudo -u root -s: -u handled, then -s rejected as unsupported flag.
 		"sudo -u root -s",
 	}
 

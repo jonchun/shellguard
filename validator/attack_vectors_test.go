@@ -31,11 +31,10 @@ func expectAllow(t *testing.T, err error, desc string) {
 
 // ATTACK VECTOR 1: sudo escalation tricks
 //
-// The validator only handles `sudo` (bare) and `sudo -u <user> <cmd>`.
-// Any other sudo flag is treated as the inner command name.
-// This means `sudo -i` tries to validate command "-i", `sudo -s` tries "-s",
-// etc. These will fail because "-i" is not a registered command.
-// BUT: `sudo --` is interesting — it tries to validate command "--".
+// The validator only supports `sudo` (bare) and `sudo -u <user> <cmd>`.
+// Any other sudo flag is explicitly rejected with a clear error message.
+// This is enforced by design: validateSudo rejects any argument starting
+// with "-" (other than "-u") before the inner command is reached.
 
 func TestSudoEscalation(t *testing.T) {
 	tests := []struct {
@@ -71,7 +70,7 @@ func TestSudoEscalation(t *testing.T) {
 		{
 			name: "sudo_double_dash_then_command",
 			args: []string{"--", "ls", "/tmp"},
-			desc: "sudo -- ls: the -- is treated as the command name",
+			desc: "sudo -- ls: -- is explicitly rejected as unsupported",
 		},
 		{
 			name: "sudo_dash_i_with_command",
@@ -86,7 +85,7 @@ func TestSudoEscalation(t *testing.T) {
 		{
 			name: "sudo_dash_u_with_dash_i",
 			args: []string{"-u", "root", "-i"},
-			desc: "sudo -u root -i: -u is handled but then -i becomes the command",
+			desc: "sudo -u root -i: -u is handled but then -i is rejected as unsupported flag",
 		},
 		{
 			name: "sudo_login_shell_long_form",
@@ -106,7 +105,7 @@ func TestSudoEscalation(t *testing.T) {
 		{
 			name: "sudo_stdin_password",
 			args: []string{"-S", "ls", "/tmp"},
-			desc: "sudo -S reads password from stdin; -S treated as command",
+			desc: "sudo -S reads password from stdin",
 		},
 		{
 			name: "sudo_preserve_groups",
@@ -123,21 +122,66 @@ func TestSudoEscalation(t *testing.T) {
 	}
 }
 
-// Verify that sudo -E treats "-E" as the command name (not as a flag),
-// so it correctly fails because "-E" isn't a registered command.
-// This is the CURRENT behavior — it works by accident, not by design.
-func TestSudoFlagConfusion_CurrentBehavior(t *testing.T) {
-	// sudo -E ls /tmp: validator treats "-E" as the inner command.
-	// "-E" is not a registered command, so it gets rejected.
-	// This is SAFE but ACCIDENTAL — the error message is misleading.
+// Verify that sudo -E is explicitly rejected as an unsupported sudo flag
+// with a clear, accurate error message.
+func TestSudoFlagConfusion_ExplicitRejection(t *testing.T) {
 	err := validateOne(t, "sudo", "-E", "ls", "/tmp")
 	if err == nil {
-		t.Fatal("BYPASS: sudo -E ls /tmp was allowed — -E should not be recognized as a command")
+		t.Fatal("BYPASS: sudo -E ls /tmp was allowed — -E should be rejected as unsupported flag")
 	}
-	// Verify the error mentions "-E" — rejection should be because "-E"
-	// is not a recognized command, confirming the validator caught it.
+	// Verify the error message explicitly identifies the unsupported flag.
 	if !strings.Contains(err.Error(), "-E") {
-		t.Errorf("sudo -E rejected but error doesn't mention -E (expected it to flag the unrecognized command): %v", err)
+		t.Errorf("sudo -E rejected but error doesn't mention -E: %v", err)
+	}
+	if !strings.Contains(err.Error(), "not supported") {
+		t.Errorf("sudo -E error should say 'not supported', got: %v", err)
+	}
+}
+
+// Verify that combined sudo flags are also explicitly rejected.
+func TestSudoFlagConfusion_CombinedFlags(t *testing.T) {
+	tests := []struct {
+		name string
+		args []string
+	}{
+		{"combined_Eu", []string{"-Eu", "user", "ls"}},
+		{"combined_sH", []string{"-sH"}},
+		{"combined_iE", []string{"-iE", "ls"}},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := validateOne(t, "sudo", tc.args...)
+			if err == nil {
+				t.Fatalf("BYPASS: sudo %v was allowed", tc.args)
+			}
+			if !strings.Contains(err.Error(), "not supported") {
+				t.Errorf("expected 'not supported' in error, got: %v", err)
+			}
+		})
+	}
+}
+
+// Verify that long-form sudo flags are explicitly rejected.
+func TestSudoFlagConfusion_LongFormFlags(t *testing.T) {
+	tests := []struct {
+		name string
+		args []string
+	}{
+		{"preserve_env", []string{"--preserve-env", "ls"}},
+		{"user_long_form", []string{"--user=root", "ls"}},
+		{"login", []string{"--login"}},
+		{"shell", []string{"--shell"}},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := validateOne(t, "sudo", tc.args...)
+			if err == nil {
+				t.Fatalf("BYPASS: sudo %v was allowed", tc.args)
+			}
+			if !strings.Contains(err.Error(), "not supported") {
+				t.Errorf("expected 'not supported' in error, got: %v", err)
+			}
+		})
 	}
 }
 

@@ -78,12 +78,23 @@ func validateSudo(segment parser.PipelineSegment, registry map[string]*manifest.
 		if len(args) < 3 {
 			return &ValidationError{Message: "sudo -u requires a username and a command."}
 		}
+		// Reject any flag-like argument after -u <user> (e.g., sudo -u root -i).
+		if strings.HasPrefix(args[2], "-") {
+			return &ValidationError{Message: fmt.Sprintf("sudo flag '%s' is not supported. Only 'sudo [-u user] <command>' is allowed.", args[2])}
+		}
 		inner := parser.PipelineSegment{
 			Command:  args[2],
 			Args:     args[3:],
 			Operator: segment.Operator,
 		}
 		return validateSegment(inner, registry, false)
+	}
+
+	// Reject any unsupported sudo flag. Only -u is handled above;
+	// all other flags (-s, -i, -E, -H, --, --login, etc.) are explicitly
+	// rejected rather than relying on them failing the command lookup.
+	if strings.HasPrefix(args[0], "-") {
+		return &ValidationError{Message: fmt.Sprintf("sudo flag '%s' is not supported. Only 'sudo [-u user] <command>' is allowed.", args[0])}
 	}
 
 	// sudo <command> [args...]
