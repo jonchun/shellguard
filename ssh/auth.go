@@ -1,6 +1,7 @@
 package ssh
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -40,6 +41,30 @@ func loadPrivateKey(path string) gossh.Signer {
 		return nil
 	}
 	return signer
+}
+
+// loadKeyFile reads and parses a private key from path, returning the signer.
+// If the key is passphrase-protected, it returns a clear error directing the
+// user to load the key into their ssh-agent with ssh-add. ShellGuard is an MCP
+// server with no interactive terminal, so prompting for a passphrase is not
+// possible.
+func loadKeyFile(path string) (gossh.Signer, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read identity file: %w", err)
+	}
+	signer, err := gossh.ParsePrivateKey(data)
+	if err != nil {
+		var ppErr *gossh.PassphraseMissingError
+		if errors.As(err, &ppErr) {
+			return nil, fmt.Errorf(
+				"key %s is passphrase-protected; add it to your ssh-agent with: ssh-add %s",
+				path, path,
+			)
+		}
+		return nil, fmt.Errorf("parse key %s: %w", path, err)
+	}
+	return signer, nil
 }
 
 // normalizePath returns an absolute, cleaned version of path for use in
@@ -115,13 +140,9 @@ func buildAuthMethodsWithDefaults(params ConnectionParams, defaults []string) ([
 		normPath := normalizePath(params.IdentityFile)
 		tried[normPath] = struct{}{}
 
-		key, err := os.ReadFile(params.IdentityFile)
+		signer, err := loadKeyFile(params.IdentityFile)
 		if err != nil {
-			return nil, agentCleanup, fmt.Errorf("read identity file: %w", err)
-		}
-		signer, err := gossh.ParsePrivateKey(key)
-		if err != nil {
-			return nil, agentCleanup, fmt.Errorf("parse identity key: %w", err)
+			return nil, agentCleanup, err
 		}
 		methods = append(methods, gossh.PublicKeys(signer))
 	}
