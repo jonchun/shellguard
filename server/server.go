@@ -665,13 +665,13 @@ func (c *Core) Sleep(ctx context.Context, in SleepInput) (map[string]any, error)
 type ServerOptions struct {
 	// Name is the MCP server implementation name. Default: "shellguard".
 	Name string
-	// Version is the MCP server implementation version. Default: "0.1.0".
+	// Version is the MCP server implementation version. Default: "0.2.0".
 	Version string
 }
 
 func NewMCPServer(core *Core, opts ...ServerOptions) *mcp.Server {
 	name := "shellguard"
-	version := "0.1.0"
+	version := "0.2.0"
 	if len(opts) > 0 {
 		if opts[0].Name != "" {
 			name = opts[0].Name
