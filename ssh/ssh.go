@@ -296,17 +296,11 @@ func (d *XCryptoDialer) Dial(ctx context.Context, params ConnectionParams) (Clie
 		Timeout:         d.connectTimeout(),
 	}
 
-	if params.IdentityFile != "" {
-		key, err := os.ReadFile(params.IdentityFile)
-		if err != nil {
-			return nil, fmt.Errorf("read identity file: %w", err)
-		}
-		signer, err := gossh.ParsePrivateKey(key)
-		if err != nil {
-			return nil, fmt.Errorf("parse identity key: %w", err)
-		}
-		cfg.Auth = append(cfg.Auth, gossh.PublicKeys(signer))
+	authMethods, err := buildAuthMethods(params)
+	if err != nil {
+		return nil, err
 	}
+	cfg.Auth = authMethods
 
 	addr := fmt.Sprintf("%s:%d", params.Host, params.Port)
 	var netDialer net.Dialer
