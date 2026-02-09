@@ -1,0 +1,3 @@
+name: touch
+deny: true
+reason: "Creating/modifying files is not allowed -- read-only access only"

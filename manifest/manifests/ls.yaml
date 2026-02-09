@@ -1,0 +1,13 @@
+name: ls
+description: List directory contents
+category: filesystem
+flags:
+  - flag: "-l"
+  - flag: "-a"
+  - flag: "-h"
+  - flag: "-t"
+  - flag: "-R"
+  - flag: "-1"
+allows_path_args: true
+stdin: false
+stdout: true

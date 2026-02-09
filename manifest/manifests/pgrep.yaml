@@ -1,0 +1,10 @@
+name: pgrep
+description: Look up process IDs by name
+category: process
+flags:
+  - flag: "-a"
+  - flag: "-f"
+  - flag: "-u"
+    takes_value: true
+stdin: false
+stdout: true

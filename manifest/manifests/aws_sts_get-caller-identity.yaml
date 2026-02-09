@@ -1,0 +1,8 @@
+name: aws_sts_get-caller-identity
+description: Return details about the IAM identity whose credentials are used
+category: cloud
+flags:
+  - flag: "--region"
+    takes_value: true
+stdin: false
+stdout: true

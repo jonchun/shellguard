@@ -1,0 +1,3 @@
+name: mkfifo
+deny: true
+reason: "Creating named pipes is not allowed -- read-only access only"

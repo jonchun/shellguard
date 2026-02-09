@@ -1,0 +1,22 @@
+name: psql
+description: PostgreSQL client
+category: database
+flags:
+  - flag: "-c"
+    takes_value: true
+  - flag: "-t"
+  - flag: "-d"
+    takes_value: true
+  - flag: "-p"
+    takes_value: true
+  - flag: "-U"
+    takes_value: true
+  - flag: "-A"
+  - flag: "-F"
+    takes_value: true
+  - flag: "-x"
+  - flag: "-f"
+    deny: true
+    reason: "Cannot execute SQL from file; file contents are not inspectable"
+stdin: false
+stdout: true

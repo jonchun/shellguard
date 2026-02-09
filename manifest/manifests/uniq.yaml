@@ -1,0 +1,10 @@
+name: uniq
+description: Report or omit repeated lines
+category: text_processing
+flags:
+  - flag: "-c"
+  - flag: "-d"
+  - flag: "-u"
+allows_path_args: true
+stdin: true
+stdout: true

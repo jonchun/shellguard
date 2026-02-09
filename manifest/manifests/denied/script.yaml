@@ -1,0 +1,3 @@
+name: script
+deny: true
+reason: "Terminal recording tools that spawn shells are not allowed"

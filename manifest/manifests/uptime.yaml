@@ -1,0 +1,7 @@
+name: uptime
+description: Tell how long the system has been running
+category: system
+flags:
+  - flag: "-p"
+stdin: false
+stdout: true

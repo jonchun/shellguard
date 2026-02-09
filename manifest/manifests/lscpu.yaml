@@ -1,0 +1,6 @@
+name: lscpu
+description: Display information about the CPU architecture
+category: system
+flags: []
+stdin: false
+stdout: true

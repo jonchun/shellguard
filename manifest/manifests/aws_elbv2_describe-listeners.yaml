@@ -1,0 +1,10 @@
+name: aws_elbv2_describe-listeners
+description: Describe ELBv2 listeners
+category: cloud
+flags:
+  - flag: "--load-balancer-arn"
+    takes_value: true
+  - flag: "--region"
+    takes_value: true
+stdin: false
+stdout: true

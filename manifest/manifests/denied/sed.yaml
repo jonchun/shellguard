@@ -1,0 +1,3 @@
+name: sed
+deny: true
+reason: "Stream editing can modify files -- read-only access only. Use grep for searching."

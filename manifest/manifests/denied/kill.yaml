@@ -1,0 +1,3 @@
+name: kill
+deny: true
+reason: "Sending signals to processes is not allowed -- read-only access only"

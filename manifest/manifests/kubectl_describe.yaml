@@ -1,0 +1,8 @@
+name: kubectl_describe
+description: Show details of a specific resource
+category: containers
+flags:
+  - flag: "-n"
+    takes_value: true
+stdin: false
+stdout: true

@@ -1,0 +1,3 @@
+name: cp
+deny: true
+reason: "Copying files is not allowed -- read-only access only"

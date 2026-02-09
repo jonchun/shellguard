@@ -1,0 +1,28 @@
+name: grep
+description: Print lines matching patterns
+category: text_processing
+regex_arg_position: 0
+flags:
+  - flag: "-C"
+    takes_value: true
+  - flag: "-A"
+    takes_value: true
+  - flag: "-B"
+    takes_value: true
+  - flag: "-i"
+  - flag: "-r"
+  - flag: "-v"
+  - flag: "-c"
+  - flag: "-l"
+  - flag: "-n"
+  - flag: "-E"
+  - flag: "-P"
+  - flag: "-h"
+  - flag: "-w"
+  - flag: "-o"
+  - flag: "-q"
+  - flag: "-e"
+    takes_value: true
+allows_path_args: true
+stdin: true
+stdout: true

@@ -1,0 +1,7 @@
+name: bzcat
+description: Decompress bzip2 files to stdout
+category: filesystem
+flags: []
+allows_path_args: true
+stdin: true
+stdout: true

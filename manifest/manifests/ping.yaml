@@ -1,0 +1,10 @@
+name: ping
+description: Send ICMP ECHO_REQUEST to network hosts
+category: network
+flags:
+  - flag: "-c"
+    takes_value: true
+  - flag: "-W"
+    takes_value: true
+stdin: false
+stdout: true

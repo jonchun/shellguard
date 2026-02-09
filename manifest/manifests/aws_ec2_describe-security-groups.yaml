@@ -1,0 +1,10 @@
+name: aws_ec2_describe-security-groups
+description: Describe EC2 security groups
+category: cloud
+flags:
+  - flag: "--region"
+    takes_value: true
+  - flag: "--profile"
+    takes_value: true
+stdin: false
+stdout: true

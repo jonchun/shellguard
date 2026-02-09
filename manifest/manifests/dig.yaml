@@ -1,0 +1,7 @@
+name: dig
+description: DNS lookup utility
+category: network
+flags:
+  - flag: "+short"
+stdin: false
+stdout: true

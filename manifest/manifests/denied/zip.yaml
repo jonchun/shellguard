@@ -1,0 +1,3 @@
+name: zip
+deny: true
+reason: "Creating zip archives is not allowed -- read-only access only. Use unzip -l or unzip -p to inspect."

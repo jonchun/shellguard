@@ -1,0 +1,10 @@
+name: aws_elbv2_describe-load-balancers
+description: Describe load balancers
+category: cloud
+flags:
+  - flag: "--region"
+    takes_value: true
+  - flag: "--profile"
+    takes_value: true
+stdin: false
+stdout: true

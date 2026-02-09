@@ -1,0 +1,15 @@
+name: tail
+description: Output last part of files
+category: filesystem
+flags:
+  - flag: "-n"
+    takes_value: true
+  - flag: "-f"
+    deny: true
+    reason: "Follow mode hangs until timeout. Use tail -n 100 for recent lines."
+  - flag: "--follow"
+    deny: true
+    reason: "Follow mode hangs until timeout. Use tail -n 100 for recent lines."
+allows_path_args: true
+stdin: true
+stdout: true

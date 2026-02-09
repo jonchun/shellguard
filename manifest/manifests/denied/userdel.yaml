@@ -1,0 +1,3 @@
+name: userdel
+deny: true
+reason: "User management is not allowed -- read-only access only"

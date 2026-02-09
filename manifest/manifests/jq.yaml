@@ -1,0 +1,10 @@
+name: jq
+description: Command-line JSON processor
+category: text_processing
+flags:
+  - flag: "-r"
+  - flag: "-c"
+  - flag: "-s"
+allows_path_args: true
+stdin: true
+stdout: true

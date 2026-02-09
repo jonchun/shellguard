@@ -1,0 +1,6 @@
+name: systemctl_is-enabled
+description: Check whether unit files are enabled
+category: services
+flags: []
+stdin: false
+stdout: true

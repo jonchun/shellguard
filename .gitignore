@@ -1,0 +1,5 @@
+bin/
+*.exe
+.DS_Store
+.opencode/
+.env

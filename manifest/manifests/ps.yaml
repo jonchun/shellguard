@@ -1,0 +1,10 @@
+name: ps
+description: Report process status
+category: process
+flags:
+  - flag: "-e"
+  - flag: "-f"
+  - flag: "-o"
+    takes_value: true
+stdin: false
+stdout: true

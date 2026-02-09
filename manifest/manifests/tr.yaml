@@ -1,0 +1,9 @@
+name: tr
+description: Translate or delete characters
+category: text_processing
+flags:
+  - flag: "-d"
+  - flag: "-s"
+allows_path_args: false
+stdin: true
+stdout: true

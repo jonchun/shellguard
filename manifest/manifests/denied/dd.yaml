@@ -1,0 +1,3 @@
+name: dd
+deny: true
+reason: "Block device operations are not allowed -- read-only access only"

@@ -1,0 +1,6 @@
+name: systemctl_is-active
+description: Check whether units are active
+category: services
+flags: []
+stdin: false
+stdout: true

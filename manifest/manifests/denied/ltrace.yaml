@@ -1,0 +1,3 @@
+name: ltrace
+deny: true
+reason: "Debugging tools that can execute arbitrary commands are not allowed"

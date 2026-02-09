@@ -1,0 +1,3 @@
+name: apt
+deny: true
+reason: "Package installation and mutation are not allowed"

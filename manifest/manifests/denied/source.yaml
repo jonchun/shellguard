@@ -1,0 +1,3 @@
+name: source
+deny: true
+reason: "Sourcing files can execute arbitrary commands and is not allowed"

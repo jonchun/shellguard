@@ -1,0 +1,6 @@
+name: nslookup
+description: Query Internet name servers interactively
+category: network
+flags: []
+stdin: false
+stdout: true

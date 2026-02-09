@@ -1,0 +1,3 @@
+name: awk
+deny: true
+reason: "Awk can execute commands -- use grep, cut, or tr for text processing"

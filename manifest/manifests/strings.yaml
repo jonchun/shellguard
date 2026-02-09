@@ -1,0 +1,9 @@
+name: strings
+description: Print printable strings in files
+category: filesystem
+flags:
+  - flag: "-n"
+    takes_value: true
+allows_path_args: true
+stdin: false
+stdout: true

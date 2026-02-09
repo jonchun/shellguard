@@ -1,0 +1,37 @@
+version: 2
+
+builds:
+  - main: ./cmd/shellguard
+    binary: shellguard
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - format: tar.gz
+    name_template: "shellguard_{{ .Os }}_{{ .Arch }}"
+
+brews:
+  - repository:
+      owner: jonchun
+      name: homebrew-tap
+    homepage: https://github.com/jonchun/shellguard
+    description: Security-first MCP server for remote command execution
+    license: Apache-2.0
+    install: |
+      bin.install "shellguard"
+
+checksum:
+  name_template: checksums.txt
+
+release:
+  github:
+    owner: jonchun
+    name: shellguard

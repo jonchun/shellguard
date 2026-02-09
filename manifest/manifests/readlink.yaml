@@ -1,0 +1,8 @@
+name: readlink
+description: Print resolved symbolic links
+category: filesystem
+flags:
+  - flag: "-f"
+allows_path_args: true
+stdin: false
+stdout: true

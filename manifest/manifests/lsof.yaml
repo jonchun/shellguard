@@ -1,0 +1,9 @@
+name: lsof
+description: List open files
+category: process
+flags:
+  - flag: "-i"
+  - flag: "-p"
+    takes_value: true
+stdin: false
+stdout: true

@@ -1,0 +1,7 @@
+name: docker_ps
+description: List Docker containers
+category: containers
+flags:
+  - flag: "-a"
+stdin: false
+stdout: true

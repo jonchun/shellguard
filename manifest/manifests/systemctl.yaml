@@ -1,0 +1,6 @@
+name: systemctl
+description: systemd parent manifest
+category: services
+flags: []
+stdin: false
+stdout: true

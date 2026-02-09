@@ -1,0 +1,11 @@
+name: sort
+description: Sort lines of text files
+category: text_processing
+flags:
+  - flag: "-n"
+  - flag: "-r"
+  - flag: "-k"
+    takes_value: true
+allows_path_args: true
+stdin: true
+stdout: true

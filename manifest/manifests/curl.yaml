@@ -1,0 +1,49 @@
+name: curl
+description: Transfer data from or to a server (GET-only policy)
+category: network
+flags:
+  - flag: "-I"
+  - flag: "-s"
+  - flag: "-S"
+  - flag: "-m"
+    takes_value: true
+  - flag: "-k"
+  - flag: "-L"
+  - flag: "-X"
+    deny: true
+    reason: "Only GET requests are allowed"
+  - flag: "--request"
+    deny: true
+    reason: "Only GET requests are allowed"
+  - flag: "-d"
+    deny: true
+    reason: "Request bodies are not allowed"
+  - flag: "--data"
+    deny: true
+    reason: "Request bodies are not allowed"
+  - flag: "--data-binary"
+    deny: true
+    reason: "Request bodies are not allowed"
+  - flag: "--data-urlencode"
+    deny: true
+    reason: "Request bodies are not allowed"
+  - flag: "-o"
+    deny: true
+    reason: "Writing output to files is not allowed"
+  - flag: "--output"
+    deny: true
+    reason: "Writing output to files is not allowed"
+  - flag: "-O"
+    deny: true
+    reason: "Writing output to files is not allowed"
+  - flag: "--remote-name"
+    deny: true
+    reason: "Writing output to files is not allowed"
+  - flag: "-T"
+    deny: true
+    reason: "Uploading files is not allowed"
+  - flag: "--upload-file"
+    deny: true
+    reason: "Uploading files is not allowed"
+stdin: false
+stdout: true

@@ -1,0 +1,7 @@
+name: zcat
+description: Decompress gzip files to stdout
+category: filesystem
+flags: []
+allows_path_args: true
+stdin: true
+stdout: true

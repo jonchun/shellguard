@@ -1,0 +1,3 @@
+name: ip
+deny: true
+reason: "Network configuration changes are not allowed. Use 'ss' for socket info, 'hostname' for hostname/IP info."

@@ -1,0 +1,10 @@
+name: df
+description: Report file system disk space usage
+category: filesystem
+flags:
+  - flag: "-h"
+  - flag: "-i"
+  - flag: "-T"
+allows_path_args: true
+stdin: false
+stdout: true

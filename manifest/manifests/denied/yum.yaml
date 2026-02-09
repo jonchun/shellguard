@@ -1,0 +1,3 @@
+name: yum
+deny: true
+reason: "Package installation and mutation are not allowed"

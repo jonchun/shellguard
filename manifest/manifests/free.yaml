@@ -1,0 +1,9 @@
+name: free
+description: Display amount of free and used memory
+category: system
+flags:
+  - flag: "-h"
+  - flag: "-m"
+  - flag: "-g"
+stdin: false
+stdout: true

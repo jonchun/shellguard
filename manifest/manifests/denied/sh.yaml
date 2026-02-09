@@ -1,0 +1,3 @@
+name: sh
+deny: true
+reason: "Cannot run an interactive shell -- use specific commands instead"

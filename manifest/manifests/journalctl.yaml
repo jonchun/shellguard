@@ -1,0 +1,21 @@
+name: journalctl
+description: Query the systemd journal
+category: logs
+timeout: 120
+flags:
+  - flag: "-u"
+    takes_value: true
+  - flag: "-n"
+    takes_value: true
+  - flag: "--since"
+    takes_value: true
+  - flag: "--until"
+    takes_value: true
+  - flag: "-f"
+    deny: true
+    reason: "Follow mode hangs until timeout. Use --since/--until for bounded queries."
+  - flag: "--follow"
+    deny: true
+    reason: "Follow mode hangs until timeout. Use --since/--until for bounded queries."
+stdin: false
+stdout: true

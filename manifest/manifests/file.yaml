@@ -1,0 +1,8 @@
+name: file
+description: Determine file type
+category: filesystem
+flags:
+  - flag: "-i"
+allows_path_args: true
+stdin: false
+stdout: true

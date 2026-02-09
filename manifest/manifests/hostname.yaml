@@ -1,0 +1,7 @@
+name: hostname
+description: Show system host name
+category: filesystem
+flags:
+  - flag: "-f"
+stdin: false
+stdout: true

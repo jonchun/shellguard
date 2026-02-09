@@ -1,0 +1,7 @@
+name: echo
+description: Display a line of text (literal values only)
+category: text_processing
+flags:
+  - flag: "-n"
+stdin: false
+stdout: true

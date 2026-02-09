@@ -1,0 +1,3 @@
+name: mount
+deny: true
+reason: "Mounting filesystems is not allowed. Use 'df' and 'lsblk' for disk information."

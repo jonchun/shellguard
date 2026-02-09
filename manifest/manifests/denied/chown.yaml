@@ -1,0 +1,3 @@
+name: chown
+deny: true
+reason: "Changing ownership is not allowed -- read-only access only"

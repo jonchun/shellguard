@@ -1,0 +1,11 @@
+name: kubectl_get
+description: Display one or many resources
+category: containers
+flags:
+  - flag: "-n"
+    takes_value: true
+  - flag: "-A"
+  - flag: "-o"
+    takes_value: true
+stdin: false
+stdout: true

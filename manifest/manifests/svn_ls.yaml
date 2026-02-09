@@ -1,0 +1,8 @@
+name: svn_ls
+description: List directory entries in the repository
+category: version_control
+flags:
+  - flag: "-r"
+    takes_value: true
+stdin: false
+stdout: true

@@ -1,0 +1,47 @@
+name: tar
+description: List or extract tar archive contents to stdout
+category: filesystem
+timeout: 120
+flags:
+  - flag: "-t"
+    description: "List archive contents"
+  - flag: "-x"
+    description: "Extract files (requires -O to send to stdout)"
+  - flag: "-f"
+    description: "Archive file"
+    takes_value: true
+  - flag: "-O"
+    description: "Extract files to stdout"
+  - flag: "-z"
+    description: "Filter through gzip"
+  - flag: "-j"
+    description: "Filter through bzip2"
+  - flag: "-J"
+    description: "Filter through xz"
+  - flag: "--zstd"
+    description: "Filter through zstd"
+  - flag: "-v"
+    description: "Verbose listing"
+  - flag: "-c"
+    deny: true
+    reason: "Creating archives is not allowed -- read-only access only"
+  - flag: "-r"
+    deny: true
+    reason: "Appending to archives is not allowed -- read-only access only"
+  - flag: "-u"
+    deny: true
+    reason: "Updating archives is not allowed -- read-only access only"
+  - flag: "--delete"
+    deny: true
+    reason: "Deleting from archives is not allowed -- read-only access only"
+  - flag: "--to-command"
+    deny: true
+    reason: "Executing commands during extraction is not allowed"
+    takes_value: true
+  - flag: "--checkpoint-action"
+    deny: true
+    reason: "Checkpoint actions are not allowed"
+    takes_value: true
+allows_path_args: true
+stdin: true
+stdout: true

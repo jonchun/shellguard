@@ -1,0 +1,16 @@
+name: yq
+description: Command-line YAML/JSON/XML processor
+category: text_processing
+flags:
+  - flag: "-r"
+  - flag: "-o"
+    takes_value: true
+    allowed_values: ["yaml", "json", "xml", "csv", "tsv", "props"]
+  - flag: "-i"
+    deny: true
+    reason: "In-place edit modifies files on the remote system"
+  - flag: "-P"
+  - flag: "-C"
+allows_path_args: true
+stdin: true
+stdout: true

@@ -1,0 +1,6 @@
+name: who
+description: Show who is logged on
+category: logs
+flags: []
+stdin: false
+stdout: true

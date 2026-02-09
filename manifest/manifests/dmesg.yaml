@@ -1,0 +1,7 @@
+name: dmesg
+description: Print or control the kernel ring buffer
+category: system
+flags:
+  - flag: "-T"
+stdin: false
+stdout: true

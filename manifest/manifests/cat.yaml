@@ -1,0 +1,7 @@
+name: cat
+description: Concatenate and print files
+category: filesystem
+flags: []
+allows_path_args: true
+stdin: false
+stdout: true

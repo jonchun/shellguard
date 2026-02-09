@@ -1,0 +1,8 @@
+name: iostat
+description: Report CPU and I/O statistics
+category: system
+flags:
+  - flag: "-x"
+  - flag: "-m"
+stdin: false
+stdout: true

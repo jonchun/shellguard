@@ -1,0 +1,6 @@
+name: printenv
+description: Print all or part of environment
+category: text_processing
+flags: []
+stdin: false
+stdout: true

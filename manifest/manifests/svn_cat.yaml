@@ -1,0 +1,8 @@
+name: svn_cat
+description: Output the contents of a file
+category: version_control
+flags:
+  - flag: "-r"
+    takes_value: true
+stdin: false
+stdout: true

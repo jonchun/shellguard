@@ -1,0 +1,10 @@
+name: aws_elbv2_describe-target-groups
+description: Describe ELBv2 target groups
+category: cloud
+flags:
+  - flag: "--load-balancer-arn"
+    takes_value: true
+  - flag: "--region"
+    takes_value: true
+stdin: false
+stdout: true

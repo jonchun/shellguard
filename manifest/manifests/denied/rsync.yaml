@@ -1,0 +1,3 @@
+name: rsync
+deny: true
+reason: "Syncing files is not allowed -- read-only access only"

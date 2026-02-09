@@ -1,0 +1,20 @@
+name: unzip
+description: List or extract zip archive contents to stdout
+category: filesystem
+flags:
+  - flag: "-l"
+    description: "List archive contents"
+  - flag: "-p"
+    description: "Extract files to stdout (pipe)"
+  - flag: "-d"
+    deny: true
+    reason: "Extracting to a directory is not allowed -- read-only access only"
+  - flag: "-o"
+    deny: true
+    reason: "Overwriting files is not allowed -- read-only access only"
+  - flag: "-n"
+    deny: true
+    reason: "Extracting without overwrite is still extraction -- use -l or -p"
+allows_path_args: true
+stdin: false
+stdout: true

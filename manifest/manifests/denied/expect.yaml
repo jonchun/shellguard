@@ -1,0 +1,3 @@
+name: expect
+deny: true
+reason: "Automation tools that can spawn interactive sessions are not allowed"

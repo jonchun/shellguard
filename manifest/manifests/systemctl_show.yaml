@@ -1,0 +1,8 @@
+name: systemctl_show
+description: Show properties of one or more units
+category: services
+flags:
+  - flag: "-p"
+    takes_value: true
+stdin: false
+stdout: true

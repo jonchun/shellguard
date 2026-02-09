@@ -1,0 +1,6 @@
+name: w
+description: Show who is logged on and what they are doing
+category: logs
+flags: []
+stdin: false
+stdout: true

@@ -1,0 +1,16 @@
+name: zgrep
+description: Search inside gzip-compressed files
+category: text_processing
+regex_arg_position: 0
+flags:
+  - flag: "-i"
+  - flag: "-n"
+  - flag: "-c"
+  - flag: "-l"
+  - flag: "-v"
+  - flag: "-E"
+  - flag: "-h"
+  - flag: "-w"
+allows_path_args: true
+stdin: false
+stdout: true

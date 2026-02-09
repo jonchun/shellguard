@@ -1,0 +1,13 @@
+name: cut
+description: Remove sections from each line
+category: text_processing
+flags:
+  - flag: "-d"
+    takes_value: true
+  - flag: "-f"
+    takes_value: true
+  - flag: "-c"
+    takes_value: true
+allows_path_args: true
+stdin: true
+stdout: true

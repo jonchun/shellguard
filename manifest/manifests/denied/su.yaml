@@ -1,0 +1,3 @@
+name: su
+deny: true
+reason: "Switching users is not allowed -- use sudo -u for specific commands"

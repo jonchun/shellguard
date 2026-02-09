@@ -1,0 +1,10 @@
+name: docker_logs
+description: Fetch logs of a container
+category: containers
+flags:
+  - flag: "--tail"
+    takes_value: true
+  - flag: "--since"
+    takes_value: true
+stdin: false
+stdout: true

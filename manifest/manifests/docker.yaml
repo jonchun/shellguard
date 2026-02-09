@@ -1,0 +1,6 @@
+name: docker
+description: Docker CLI parent manifest
+category: containers
+flags: []
+stdin: false
+stdout: true

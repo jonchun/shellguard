@@ -1,0 +1,10 @@
+name: kubectl_logs
+description: Print the logs for a container in a pod
+category: containers
+flags:
+  - flag: "-n"
+    takes_value: true
+  - flag: "--tail"
+    takes_value: true
+stdin: false
+stdout: true

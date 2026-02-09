@@ -1,0 +1,3 @@
+name: ln
+deny: true
+reason: "Creating links is not allowed -- read-only access only"

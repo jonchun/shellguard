@@ -1,0 +1,3 @@
+name: install
+deny: true
+reason: "Installing files is not allowed -- read-only access only"

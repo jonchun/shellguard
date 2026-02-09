@@ -1,0 +1,3 @@
+name: timeout
+deny: true
+reason: "Command wrappers that can execute arbitrary commands are not allowed"

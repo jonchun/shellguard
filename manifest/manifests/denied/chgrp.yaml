@@ -1,0 +1,3 @@
+name: chgrp
+deny: true
+reason: "Changing group is not allowed -- read-only access only"

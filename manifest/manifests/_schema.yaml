@@ -1,0 +1,31 @@
+# Manifest Schema Reference
+#
+# Every command manifest follows this structure.
+# Files starting with _ are ignored by the loader.
+
+# Required fields:
+# name: string          # Command name (e.g., "find", "docker_ps")
+
+# For deny-only manifests (commands that should never run):
+# deny: true
+# reason: string        # Human-readable reason shown to the LLM
+
+# For allowed commands:
+# description: string
+# category: string
+# timeout: int           # Seconds, default 30
+#
+# flags:
+#   - flag: string
+#     description: string
+#     takes_value: bool
+#     pattern_value: bool
+#     allowed_values: [string]
+#     deny: bool
+#     reason: string
+#
+# allows_path_args: bool
+# restricted_paths: [string]
+# stdin: bool
+# stdout: bool
+# regex_arg_position: int  # Positional arg index that is a regex pattern (exempt from glob check)

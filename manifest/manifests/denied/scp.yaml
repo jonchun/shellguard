@@ -1,0 +1,3 @@
+name: scp
+deny: true
+reason: "File transfer tools are not allowed -- read-only access only"

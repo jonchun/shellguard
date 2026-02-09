@@ -1,0 +1,8 @@
+name: lsblk
+description: List block devices
+category: system
+flags:
+  - flag: "-f"
+  - flag: "-a"
+stdin: false
+stdout: true

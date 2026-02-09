@@ -1,0 +1,12 @@
+name: top
+description: Display Linux processes in batch mode
+category: process
+flags:
+  - flag: "-b"
+  - flag: "-n"
+    takes_value: true
+  - flag: "-d"
+    deny: true
+    reason: "Only batch mode with fixed iteration count is allowed"
+stdin: false
+stdout: true

@@ -1,0 +1,48 @@
+name: find
+description: Search for files in a directory hierarchy
+category: filesystem
+timeout: 120
+flags:
+  - flag: "-name"
+    takes_value: true
+    pattern_value: true
+  - flag: "-type"
+    takes_value: true
+    allowed_values: ["f", "d", "l", "s", "p", "b", "c"]
+  - flag: "-mtime"
+    takes_value: true
+  - flag: "-size"
+    takes_value: true
+  - flag: "-maxdepth"
+    takes_value: true
+  - flag: "-path"
+    takes_value: true
+    pattern_value: true
+  - flag: "-iname"
+    takes_value: true
+    pattern_value: true
+  - flag: "-o"
+  - flag: "-print0"
+  - flag: "-exec"
+    deny: true
+    reason: "Can execute arbitrary commands"
+  - flag: "-execdir"
+    deny: true
+    reason: "Can execute arbitrary commands"
+  - flag: "-delete"
+    deny: true
+    reason: "Deletes matched files"
+  - flag: "-ok"
+    deny: true
+    reason: "Can execute arbitrary commands"
+  - flag: "-fls"
+    deny: true
+    reason: "Writes output to a file"
+  - flag: "-fprint"
+    deny: true
+    reason: "Writes output to a file"
+allows_path_args: true
+restricted_paths:
+  - "/proc/kcore"
+stdin: false
+stdout: true

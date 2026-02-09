@@ -1,0 +1,9 @@
+name: uname
+description: Print system information
+category: system
+flags:
+  - flag: "-a"
+  - flag: "-r"
+  - flag: "-m"
+stdin: false
+stdout: true

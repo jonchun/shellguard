@@ -1,0 +1,6 @@
+name: aws
+description: AWS CLI parent manifest
+category: cloud
+flags: []
+stdin: false
+stdout: true

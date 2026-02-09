@@ -1,0 +1,3 @@
+name: tmux
+deny: true
+reason: "Terminal multiplexers are not allowed -- they provide shell access"

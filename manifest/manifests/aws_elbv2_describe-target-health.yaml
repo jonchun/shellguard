@@ -1,0 +1,10 @@
+name: aws_elbv2_describe-target-health
+description: Describe target health
+category: cloud
+flags:
+  - flag: "--target-group-arn"
+    takes_value: true
+  - flag: "--region"
+    takes_value: true
+stdin: false
+stdout: true

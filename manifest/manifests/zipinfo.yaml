@@ -1,0 +1,13 @@
+name: zipinfo
+description: Display detailed zip archive information
+category: filesystem
+flags:
+  - flag: "-1"
+    description: "List filenames only"
+  - flag: "-l"
+    description: "Long format listing"
+  - flag: "-s"
+    description: "Short format listing"
+allows_path_args: true
+stdin: false
+stdout: true

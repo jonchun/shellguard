@@ -1,0 +1,3 @@
+name: vi
+deny: true
+reason: "Editors are not allowed in troubleshooting mode"

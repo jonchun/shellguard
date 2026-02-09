@@ -1,0 +1,11 @@
+name: ss
+description: Investigate sockets
+category: network
+flags:
+  - flag: "-t"
+  - flag: "-u"
+  - flag: "-l"
+  - flag: "-n"
+  - flag: "-p"
+stdin: false
+stdout: true

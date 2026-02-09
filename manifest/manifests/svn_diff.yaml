@@ -1,0 +1,8 @@
+name: svn_diff
+description: Display the differences between two paths
+category: version_control
+flags:
+  - flag: "-r"
+    takes_value: true
+stdin: false
+stdout: true

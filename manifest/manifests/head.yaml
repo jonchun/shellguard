@@ -1,0 +1,9 @@
+name: head
+description: Output first part of files
+category: filesystem
+flags:
+  - flag: "-n"
+    takes_value: true
+allows_path_args: true
+stdin: true
+stdout: true

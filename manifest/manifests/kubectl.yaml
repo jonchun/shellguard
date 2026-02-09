@@ -1,0 +1,6 @@
+name: kubectl
+description: Kubernetes CLI parent manifest
+category: containers
+flags: []
+stdin: false
+stdout: true

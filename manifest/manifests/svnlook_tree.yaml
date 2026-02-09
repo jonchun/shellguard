@@ -1,0 +1,8 @@
+name: svnlook_tree
+description: List the tree in a repository
+category: version_control
+flags:
+  - flag: "-r"
+    takes_value: true
+stdin: false
+stdout: true

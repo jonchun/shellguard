@@ -1,0 +1,7 @@
+name: xzcat
+description: Decompress xz files to stdout
+category: filesystem
+flags: []
+allows_path_args: true
+stdin: true
+stdout: true

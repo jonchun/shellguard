@@ -1,0 +1,7 @@
+name: vmstat
+description: Report virtual memory statistics
+category: system
+flags:
+  - flag: "-s"
+stdin: false
+stdout: true

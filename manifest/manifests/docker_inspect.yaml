@@ -1,0 +1,8 @@
+name: docker_inspect
+description: Return low-level information on Docker objects
+category: containers
+flags:
+  - flag: "--format"
+    takes_value: true
+stdin: false
+stdout: true

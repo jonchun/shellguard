@@ -1,0 +1,3 @@
+name: reboot
+deny: true
+reason: "System power management is not allowed"

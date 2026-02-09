@@ -1,0 +1,3 @@
+name: gawk
+deny: true
+reason: "Interpreters are not allowed for arbitrary code execution"

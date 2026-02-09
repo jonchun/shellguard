@@ -1,0 +1,6 @@
+name: svn
+description: Subversion parent manifest
+category: version_control
+flags: []
+stdin: false
+stdout: true

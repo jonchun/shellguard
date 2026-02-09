@@ -1,0 +1,3 @@
+name: mkdir
+deny: true
+reason: "Creating directories is not allowed -- read-only access only"

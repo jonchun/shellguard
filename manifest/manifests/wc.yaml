@@ -1,0 +1,10 @@
+name: wc
+description: Print newline, word, and byte counts
+category: filesystem
+flags:
+  - flag: "-l"
+  - flag: "-w"
+  - flag: "-c"
+allows_path_args: true
+stdin: true
+stdout: true

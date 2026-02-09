@@ -1,0 +1,3 @@
+name: chmod
+deny: true
+reason: "Changing permissions is not allowed -- read-only access only"

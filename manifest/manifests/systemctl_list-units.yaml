@@ -1,0 +1,8 @@
+name: systemctl_list-units
+description: List units currently in memory
+category: services
+flags:
+  - flag: "--type"
+    takes_value: true
+stdin: false
+stdout: true

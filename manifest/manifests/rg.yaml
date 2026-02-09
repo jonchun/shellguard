@@ -1,0 +1,22 @@
+name: rg
+description: Recursively search text using ripgrep
+category: text_processing
+regex_arg_position: 0
+flags:
+  - flag: "-i"
+  - flag: "-n"
+  - flag: "-S"
+  - flag: "-g"
+    takes_value: true
+    pattern_value: true
+  - flag: "-c"
+  - flag: "-l"
+  - flag: "-w"
+  - flag: "-o"
+  - flag: "-e"
+    takes_value: true
+  - flag: "--type"
+    takes_value: true
+allows_path_args: true
+stdin: true
+stdout: true

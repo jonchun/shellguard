@@ -1,0 +1,17 @@
+name: xargs
+description: Build and execute commands from stdin
+category: text_processing
+flags:
+  - flag: "-I"
+    takes_value: true
+  - flag: "-n"
+    takes_value: true
+  - flag: "-d"
+    takes_value: true
+  - flag: "--no-run-if-empty"
+  - flag: "-0"
+  - flag: "-P"
+    deny: true
+    reason: "Parallel execution not needed for troubleshooting"
+stdin: true
+stdout: true

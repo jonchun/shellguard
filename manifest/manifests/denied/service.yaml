@@ -1,0 +1,3 @@
+name: service
+deny: true
+reason: "Service management is not allowed -- use systemctl status for diagnostics"

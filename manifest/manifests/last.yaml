@@ -1,0 +1,8 @@
+name: last
+description: Show listing of last logged in users
+category: logs
+flags:
+  - flag: "-n"
+    takes_value: true
+stdin: false
+stdout: true
