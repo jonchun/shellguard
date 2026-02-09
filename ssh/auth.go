@@ -26,7 +26,7 @@ func agentSigners() []gossh.Signer {
 	if err != nil {
 		return nil
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	signers, err := agent.NewClient(conn).Signers()
 	if err != nil || len(signers) == 0 {

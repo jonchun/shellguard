@@ -142,7 +142,7 @@ func startTestAgentKeyring(t *testing.T, keyring agent.Agent) string {
 	if err != nil {
 		t.Fatalf("listen: %v", err)
 	}
-	t.Cleanup(func() { ln.Close() })
+	t.Cleanup(func() { _ = ln.Close() })
 
 	go func() {
 		for {
@@ -150,7 +150,10 @@ func startTestAgentKeyring(t *testing.T, keyring agent.Agent) string {
 			if err != nil {
 				return
 			}
-			go agent.ServeAgent(keyring, conn)
+			go func() {
+				_ = agent.ServeAgent(keyring, conn)
+				_ = conn.Close()
+			}()
 		}
 	}()
 
