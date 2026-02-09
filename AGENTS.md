@@ -157,6 +157,18 @@ Include rich seed corpora covering normal inputs, attack vectors, edge cases,
 and unicode. Post-fuzz invariant checking is expected (non-empty segments, valid
 operators, balanced quotes, idempotency, round-trip consistency).
 
+## Releases
+
+Releases are handled automatically by **goreleaser** via the `Release` GitHub
+Actions workflow (`.github/workflows/release.yml`). To create a new release:
+
+1. Create and push an annotated tag: `git tag -a v0.X.Y -m "v0.X.Y" && git push origin v0.X.Y`
+2. The workflow triggers on tag push and goreleaser builds binaries, checksums,
+   and creates the GitHub release with assets.
+
+Do **not** manually create GitHub releases with `gh release create` — goreleaser
+owns that process.
+
 ## Manifest Conventions
 
 Command manifests are YAML files in `manifest/manifests/` (allowed) and

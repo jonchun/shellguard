@@ -2,5 +2,6 @@ bin/
 *.exe
 .DS_Store
 .opencode/
+opencode/
 .env
 .worktrees/
