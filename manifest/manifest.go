@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"os"
 	"path"
-	"path/filepath"
 	"slices"
 	"strings"
 
@@ -73,9 +72,24 @@ func (m *Manifest) GetFlag(name string) *Flag {
 }
 
 func LoadEmbedded() (map[string]*Manifest, error) {
+	return loadFromFS(manifestsFS, "manifests")
+}
+
+// LoadDir loads manifests from dir (recursive). Skips _-prefixed and non-YAML files.
+func LoadDir(dir string) (map[string]*Manifest, error) {
+	registry, err := loadFromFS(os.DirFS(dir), ".")
+	if err != nil {
+		return nil, fmt.Errorf("walk manifest directory %s: %w", dir, err)
+	}
+	return registry, nil
+}
+
+// loadFromFS walks root within fsys, loading all YAML manifests into a registry.
+// Skips directories, non-.yaml files, and files prefixed with "_".
+func loadFromFS(fsys fs.FS, root string) (map[string]*Manifest, error) {
 	registry := make(map[string]*Manifest)
 
-	err := fs.WalkDir(manifestsFS, "manifests", func(filePath string, d fs.DirEntry, err error) error {
+	err := fs.WalkDir(fsys, root, func(filePath string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -89,7 +103,7 @@ func LoadEmbedded() (map[string]*Manifest, error) {
 			return nil
 		}
 
-		b, readErr := manifestsFS.ReadFile(filePath)
+		b, readErr := fs.ReadFile(fsys, filePath)
 		if readErr != nil {
 			return fmt.Errorf("read manifest %s: %w", filePath, readErr)
 		}
@@ -110,51 +124,6 @@ func LoadEmbedded() (map[string]*Manifest, error) {
 	})
 	if err != nil {
 		return nil, err
-	}
-
-	return registry, nil
-}
-
-// LoadDir loads manifests from dir (recursive). Skips _-prefixed and non-YAML files.
-func LoadDir(dir string) (map[string]*Manifest, error) {
-	registry := make(map[string]*Manifest)
-
-	err := filepath.WalkDir(dir, func(filePath string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			return nil
-		}
-		name := filepath.Base(filePath)
-		if filepath.Ext(name) != ".yaml" {
-			return nil
-		}
-		if strings.HasPrefix(name, "_") {
-			return nil
-		}
-
-		b, readErr := os.ReadFile(filePath)
-		if readErr != nil {
-			return fmt.Errorf("read manifest %s: %w", filePath, readErr)
-		}
-
-		var data map[string]any
-		if unmarshalErr := yaml.Unmarshal(b, &data); unmarshalErr != nil {
-			return &ManifestError{
-				Message: fmt.Sprintf("invalid YAML in %s: %v", filePath, unmarshalErr),
-			}
-		}
-
-		manifest, parseErr := parseManifest(data, filePath)
-		if parseErr != nil {
-			return parseErr
-		}
-		registry[manifest.Name] = manifest
-		return nil
-	})
-	if err != nil {
-		return nil, fmt.Errorf("walk manifest directory %s: %w", dir, err)
 	}
 
 	return registry, nil
