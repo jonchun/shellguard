@@ -79,7 +79,6 @@ func (d *SystemSSHDialer) Dial(ctx context.Context, params ConnectionParams) (Cl
 		"-o", "ControlPath=" + ctlPath,
 		"-o", fmt.Sprintf("ControlPersist=%d", controlPersistSeconds),
 		"-o", "BatchMode=yes",
-		"-o", "StrictHostKeyChecking=accept-new",
 		"-p", strconv.Itoa(params.Port),
 		"-N",
 	}
