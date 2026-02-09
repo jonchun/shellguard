@@ -290,9 +290,13 @@ func (d *XCryptoDialer) connectTimeout() time.Duration {
 
 func (d *XCryptoDialer) Dial(ctx context.Context, params ConnectionParams) (Client, error) {
 	params = withDefaults(params)
+
+	authMethods, authCleanup := buildAuthMethods(params.IdentityFile)
+	defer authCleanup()
+
 	cfg := &gossh.ClientConfig{
 		User:            params.User,
-		Auth:            buildAuthMethods(params.IdentityFile),
+		Auth:            authMethods,
 		HostKeyCallback: gossh.InsecureIgnoreHostKey(),
 		Timeout:         d.connectTimeout(),
 	}
