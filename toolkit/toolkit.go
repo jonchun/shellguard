@@ -24,9 +24,10 @@ import (
 var ToolkitTools = []string{"rg", "jq", "yq"}
 
 const (
-	RemoteBinDir        = ".shellguard/bin"
-	toolkitOverrideEnv  = "SHELLGUARD_TOOLKIT_DIR"
-	defaultDownloadMode = 0o755
+	RemoteBinDir             = ".shellguard/bin"
+	toolkitOverrideEnv       = "SHELLGUARD_TOOLKIT_DIR"
+	defaultDownloadMode      = 0o755
+	maxToolDownloadBytes int = 50 * 1024 * 1024 // 50MB
 )
 
 type DownloadSpec struct {
@@ -299,9 +300,15 @@ func downloadFile(ctx context.Context, url string) ([]byte, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("download %s: unexpected status %d", url, resp.StatusCode)
 	}
-	body, err := io.ReadAll(resp.Body)
+	// Limit response size to prevent memory exhaustion from unexpected responses.
+	// Read one extra byte to detect truncation vs exact-fit.
+	limited := io.LimitReader(resp.Body, int64(maxToolDownloadBytes)+1)
+	body, err := io.ReadAll(limited)
 	if err != nil {
 		return nil, fmt.Errorf("read %s: %w", url, err)
+	}
+	if len(body) > maxToolDownloadBytes {
+		return nil, fmt.Errorf("download %s: response exceeded %d bytes", url, maxToolDownloadBytes)
 	}
 	return body, nil
 }
