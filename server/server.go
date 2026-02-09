@@ -29,6 +29,10 @@ const (
 	defaultDownloadDir = "/tmp/shellguard-downloads"
 )
 
+// maxCollisionRetries is the upper bound on filename collision retries in
+// collisionSafePath. A var (not const) so tests can temporarily lower it.
+var maxCollisionRetries = 10000
+
 // Executor runs commands on remote targets.
 type Executor interface {
 	Connect(ctx context.Context, params ssh.ConnectionParams) error
@@ -625,7 +629,7 @@ func collisionSafePath(dir, filename string) (string, error) {
 		return "", fmt.Errorf("stat local path %s: %w", candidate, err)
 	}
 
-	for i := 1; ; i++ {
+	for i := 1; i <= maxCollisionRetries; i++ {
 		candidate = filepath.Join(dir, fmt.Sprintf("%s_%d%s", base, i, ext))
 		if _, err := os.Stat(candidate); errors.Is(err, os.ErrNotExist) {
 			return candidate, nil
@@ -633,6 +637,8 @@ func collisionSafePath(dir, filename string) (string, error) {
 			return "", fmt.Errorf("stat local path %s: %w", candidate, err)
 		}
 	}
+
+	return "", fmt.Errorf("filename collision: exhausted %d candidates for %q", maxCollisionRetries, filename)
 }
 
 func (c *Core) Sleep(ctx context.Context, in SleepInput) (map[string]any, error) {
