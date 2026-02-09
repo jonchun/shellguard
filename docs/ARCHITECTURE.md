@@ -206,13 +206,15 @@ Multi-stage command validation engine. Key internal components:
 
 ### `ssh`
 
-SSH connection manager with retry logic. Key components:
+SSH connection manager with retry logic, authentication, config resolution, and host key verification. Key components:
 
-- **`SSHManager`** -- manages concurrent connections with mutex-protected state. Supports connection-per-host with implicit single-host resolution.
-- **`XCryptoDialer`** -- default SSH dialer using `golang.org/x/crypto/ssh`. Note: host key verification is currently disabled.
-- **`ShellQuote()` / `ReconstructCommand()`** -- the critical security boundary that neutralizes shell metacharacters.
+- **`ssh.go`** -- `SSHManager` manages concurrent connections with mutex-protected state. `XCryptoDialer` is the default dialer using `golang.org/x/crypto/ssh`.
+- **`auth.go`** -- Builds the authentication method chain: explicit key, ssh-agent, default key discovery.
+- **`resolve.go`** -- Reads `~/.ssh/config` to resolve host aliases, per-host user/port/identity settings.
+- **`hostkey.go`** -- Host key verification with three modes: `accept-new` (TOFU, default), `strict`, `off`.
+- **`reconstruct.go`** -- `ShellQuote()` / `ReconstructCommand()` -- the critical security boundary that neutralizes shell metacharacters.
 
-**Retry logic:** Retries on transient errors (connection reset, broken pipe, timeout, EOF) with configurable count and exponential backoff.
+**Retry logic:** Retries on transient errors (connection reset, broken pipe, timeout, EOF) with configurable count and exponential backoff. Host key verification failures are not retriable.
 
 ### `output`
 
