@@ -83,10 +83,3 @@ func truncateString(data string, maxBytes int) (string, bool) {
 	combined := append(append(headBytes, sepBytes...), tailBytes...)
 	return string(combined), true
 }
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
