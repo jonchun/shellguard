@@ -1,0 +1,11 @@
+# Only review PRs explicitly labeled "needs-review".
+# Add the label to a PR to trigger a CodeRabbit review.
+reviews:
+  auto_review:
+    enabled: false
+    labels:
+      - "needs-review"
+    drafts: false
+    ignore_usernames:
+      - "dependabot"
+      - "renovate"
