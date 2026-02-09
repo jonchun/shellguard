@@ -330,7 +330,7 @@ func (c *Core) Provision(ctx context.Context, in ProvisionInput) (map[string]any
 	}
 	defer func() { _ = sftpClient.Close() }()
 
-	message, err := toolkit.DeployTools(sftpClient, probe.Missing, probe.Arch)
+	message, err := toolkit.DeployTools(ctx, sftpClient, probe.Missing, probe.Arch)
 	if err != nil {
 		c.logger.InfoContext(ctx, "provision",
 			"host", host,

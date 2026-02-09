@@ -208,7 +208,7 @@ func EnsureLocal(ctx context.Context, tool, arch string) (string, error) {
 	return targetPath, nil
 }
 
-func DeployTools(sftpClient ssh.SFTPClient, missing []string, arch string) (string, error) {
+func DeployTools(ctx context.Context, sftpClient ssh.SFTPClient, missing []string, arch string) (string, error) {
 	normArch, err := NormalizeArch(arch)
 	if err != nil {
 		return "", err
@@ -225,7 +225,7 @@ func DeployTools(sftpClient ssh.SFTPClient, missing []string, arch string) (stri
 	problems := make([]string, 0)
 
 	for _, tool := range missing {
-		localPath, err := EnsureLocal(context.Background(), tool, normArch)
+		localPath, err := EnsureLocal(ctx, tool, normArch)
 		if err != nil {
 			problems = append(problems, fmt.Sprintf("%s: %v", tool, err))
 			continue
