@@ -11,6 +11,12 @@ Commands are restricted to a curated set of read-only tools. Destructive operati
 - `sed` -> `"Stream editing can modify files -- read-only access only. Use grep for searching."`
 - `$HOME/file` -> `"Variable expansion will not expand. Use absolute paths."`
 
+## Demo
+
+Here's a demo of ShellGuard with [OpenCode](https://opencode.ai) against a simulated server. It works extremely well against real servers too.
+
+<video src="docs/videos/shellguard-demo.mp4" controls width="100%"></video>
+
 ## Quick Start
 
 ### Install
