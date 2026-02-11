@@ -282,6 +282,7 @@ func (c *Core) Execute(ctx context.Context, in ExecuteInput) (output.CommandResu
 	)
 
 	truncated := c.Truncate(execRes.Stdout, execRes.Stderr, execRes.ExitCode, execRes.RuntimeMs, c.MaxOutputBytes)
+	truncated.Host = hostForState
 	return truncated, nil
 }
 

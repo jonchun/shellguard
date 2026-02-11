@@ -12,6 +12,7 @@ const (
 )
 
 type CommandResult struct {
+	Host       string `json:"host"`
 	Stdout     string `json:"stdout"`
 	Stderr     string `json:"stderr"`
 	ExitCode   int    `json:"exit_code"`

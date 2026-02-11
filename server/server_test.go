@@ -255,6 +255,53 @@ func TestExecuteChainOrder(t *testing.T) {
 	}
 }
 
+func TestExecuteResponseIncludesExplicitHost(t *testing.T) {
+	runner := newFakeRunner()
+	core := NewCore(basicRegistry(), runner, nil)
+
+	core.Parse = func(_ string) (*parser.Pipeline, error) {
+		return &parser.Pipeline{Segments: []parser.PipelineSegment{{Command: "ls"}}}, nil
+	}
+	core.Validate = func(_ *parser.Pipeline, _ map[string]*manifest.Manifest) error { return nil }
+	core.Reconstruct = func(_ *parser.Pipeline, _, _ bool) string { return "ls" }
+
+	if _, err := core.Connect(context.Background(), ConnectInput{Host: "web1.example.com"}); err != nil {
+		t.Fatalf("Connect() error = %v", err)
+	}
+
+	res, err := core.Execute(context.Background(), ExecuteInput{Host: "web1.example.com", Command: "ls"})
+	if err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if got, want := res.Host, "web1.example.com"; got != want {
+		t.Fatalf("Host = %q, want %q", got, want)
+	}
+}
+
+func TestExecuteResponseIncludesResolvedHost(t *testing.T) {
+	runner := newFakeRunner()
+	core := NewCore(basicRegistry(), runner, nil)
+
+	core.Parse = func(_ string) (*parser.Pipeline, error) {
+		return &parser.Pipeline{Segments: []parser.PipelineSegment{{Command: "ls"}}}, nil
+	}
+	core.Validate = func(_ *parser.Pipeline, _ map[string]*manifest.Manifest) error { return nil }
+	core.Reconstruct = func(_ *parser.Pipeline, _, _ bool) string { return "ls" }
+
+	// Connect a single host, then execute without specifying host.
+	if _, err := core.Connect(context.Background(), ConnectInput{Host: "db1.internal"}); err != nil {
+		t.Fatalf("Connect() error = %v", err)
+	}
+
+	res, err := core.Execute(context.Background(), ExecuteInput{Command: "ls"})
+	if err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if got, want := res.Host, "db1.internal"; got != want {
+		t.Fatalf("Host = %q, want %q (should auto-resolve single connection)", got, want)
+	}
+}
+
 func TestExecuteStopsBeforeRunnerOnParseError(t *testing.T) {
 	runner := newFakeRunner()
 	core := NewCore(basicRegistry(), runner, nil)
